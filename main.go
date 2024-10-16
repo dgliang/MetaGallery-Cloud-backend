@@ -1,16 +1,9 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import "MetaGallery-Cloud-backend/routes"
 
 func main() {
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	if err := r.Run(":8080"); err != nil {
-		panic(err)
-		return
-	}
+	r := routes.Router()
+
+	r.Run(":8080")
 }
