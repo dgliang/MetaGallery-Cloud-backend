@@ -1,6 +1,8 @@
 package main
 
-import "MetaGallery-Cloud-backend/routes"
+import (
+	"MetaGallery-Cloud-backend/routes"
+)
 
 func main() {
 	r := routes.Router()
