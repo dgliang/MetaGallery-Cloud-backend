@@ -103,7 +103,28 @@ func (u UerController) Login(c *gin.Context) {
 }
 
 func (u UerController) GetUserInfo(c *gin.Context) {
+	account := c.Query("account")
 
+	if account == "" {
+		log.Printf("from %s 登录提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "提供的账号不全")
+		return
+	}
+
+	userData := models.GetUserData(account)
+	if userData.Account == "" {
+		log.Printf("from %s 提供的账号 %s 不存在\n", c.Request.Host, account)
+		ReturnError(c, "FAILED", "账号不存在")
+		return
+	}
+
+	userInfo := UserInfo{
+		Account: userData.Account,
+		Name:    "name",
+		Intro:   userData.Brief_Intro,
+		Avatar:  userData.Profile_Photo,
+	}
+	ReturnSuccess(c, "SUCCESS", "", userInfo)
 }
 
 func (u UerController) UpdateUserPassword(c *gin.Context) {
