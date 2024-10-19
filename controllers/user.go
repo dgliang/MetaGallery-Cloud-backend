@@ -74,7 +74,6 @@ func (u UerController) Login(c *gin.Context) {
 		return
 	}
 
-	// log.Println(userPd)
 	// 验证密码
 	if invalid := services.VerifyPassword(userPd, password); invalid == false {
 		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
@@ -129,7 +128,32 @@ func (u UerController) GetUserInfo(c *gin.Context) {
 }
 
 func (u UerController) UpdateUserPassword(c *gin.Context) {
+	account := c.DefaultPostForm("account", "")
+	oldPassword := c.DefaultPostForm("old_password", "")
+	newPassword := c.DefaultPostForm("new_password", "")
 
+	if account == "" || oldPassword == "" {
+		log.Printf("from %s 修改密码提供的账号、原密码不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "提供的账号、原密码不全")
+		return
+	}
+
+	userPd := models.GetPassword(account)
+	if invalid := services.VerifyPassword(userPd, oldPassword); invalid == false {
+		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
+		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
+		return
+	}
+
+	if newPassword == "" {
+		log.Printf("from %s 注册提供的账号、密码、确认密码不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "修改密码失败，密码不能为空")
+		return
+	}
+
+	models.UpdatePassword(account, oldPassword, newPassword)
+	log.Printf("from %s 用户 %s 修改密码成功 \n", c.Request.Host, account)
+	ReturnSuccess(c, "SUCCESS", "密码修改成功")
 }
 
 func (u UerController) UpdateUserInfo(c *gin.Context) {
