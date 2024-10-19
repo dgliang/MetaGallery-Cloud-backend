@@ -10,20 +10,25 @@ import (
 	"gorm.io/gorm"
 )
 
-func Initdb() *gorm.DB {
-	dbHost, dbPort, dbUser, dbPassword, dbName, err := config.Getdb()
-	if err != nil {
+var DataBase *gorm.DB
+
+func DataBaseInit() *gorm.DB {
+	DBHost, DBPort, DBUser, DBPassword, DBName, Err := config.GetDBEnv()
+	if Err != nil {
 		log.Fatalf("Error loading .env file")
 	}
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		dbUser, dbPassword, dbHost, dbPort, dbName)
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
+	DSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		DBUser, DBPassword, DBHost, DBPort, DBName)
+	var Err2 error
+	DataBase, Err2 = gorm.Open(mysql.Open(DSN), &gorm.Config{})
+	if Err2 != nil {
 		log.Fatalf("Error connecting database")
 	}
+	DataBase.AutoMigrate(&models.User_Data{})
 
-	db.AutoMigrate(&models.User_data{})
+	return DataBase
+}
 
-	return db
+func GetDB() *gorm.DB {
+	return DataBase
 }
