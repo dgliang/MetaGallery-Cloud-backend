@@ -151,7 +151,14 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 		return
 	}
 
-	models.UpdatePassword(account, oldPassword, newPassword)
+	hashedPd, err := services.HashPassword(newPassword)
+	if err != nil {
+		log.Println(err)
+		ReturnServerError(c, "服务器加密密码失败")
+		return
+	}
+
+	models.UpdatePassword(account, oldPassword, hashedPd)
 	log.Printf("from %s 用户 %s 修改密码成功 \n", c.Request.Host, account)
 	ReturnSuccess(c, "SUCCESS", "密码修改成功")
 }
