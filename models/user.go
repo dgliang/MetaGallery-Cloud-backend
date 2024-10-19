@@ -2,6 +2,8 @@ package models
 
 import (
 	"MetaGallery-Cloud-backend/dao"
+	"MetaGallery-Cloud-backend/services"
+	"fmt"
 	"time"
 )
 
@@ -16,20 +18,29 @@ type User_Data struct {
 	UpdatedAt     time.Time // 最后一次更新时间（由GORM自动管理）
 }
 
+// 由账号密码创建账号信息
 func CreateAccount(Account string, Password string) {
-
-	User := User_Data{Account: Account, Password: Password}
+	ProfilePhotoURL, Err := services.GetAvatarUrl(Account)
+	var User User_Data
+	if Err != nil {
+		fmt.Println(Err)
+		User = User_Data{Account: Account, Password: Password, Brief_Intro: "这个人很懒，什么都没有写"}
+	} else {
+		User = User_Data{Account: Account, Password: Password, Brief_Intro: "这个人很懒，什么都没有写", Profile_Photo: ProfilePhotoURL}
+	}
 
 	DataBase.Create(&User)
 
 }
 
+// 由结构体User_Data创建账号信息
 func CreateUserData(UserData User_Data) {
 
 	DataBase.Create(&UserData)
 
 }
 
+// 更新账号的密码
 func UpdatePassword(Account string, OriPassword string, NewPassword string) {
 
 	User := User_Data{Account: Account, Password: OriPassword}
@@ -38,6 +49,7 @@ func UpdatePassword(Account string, OriPassword string, NewPassword string) {
 
 }
 
+// 获取账号的密码
 func GetPassword(Account string) string {
 
 	var UserData User_Data
@@ -47,6 +59,7 @@ func GetPassword(Account string) string {
 	return UserData.Password
 }
 
+// 获取账号相关信息
 func GetUserData(Account string) User_Data {
 
 	var UserData User_Data
@@ -56,6 +69,7 @@ func GetUserData(Account string) User_Data {
 	return UserData
 }
 
+// 更新账号相关信息，不更新密码
 func UpdateUserData(Account string, NewUserData User_Data) {
 
 	DataBase.Model(&NewUserData).Where("account = ?", Account).Updates(User_Data{Account: Account, Brief_Intro: NewUserData.Brief_Intro, Profile_Photo: NewUserData.Profile_Photo})
