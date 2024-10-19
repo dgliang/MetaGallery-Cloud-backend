@@ -21,5 +21,9 @@ func GenerateToken(payload interface{}) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	tokenString, err := token.SignedString([]byte(secretKey))
+
+	// token 加上 Bearer 前缀
+	tokenString = "Bearer " + tokenString
+	return tokenString, err
 }
