@@ -7,5 +7,8 @@ import (
 func main() {
 	r := routes.Router()
 
+	// 提供静态文件服务
+	r.Static("/resources", "./resources")
+
 	r.Run(":8080")
 }

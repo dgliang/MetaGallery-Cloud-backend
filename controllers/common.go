@@ -1,15 +1,16 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type JsonStruct struct {
-	Code   int         `json:"code"`
-	Status string      `json:"status"`
-	Msg    string      `json:"msg"`
-	Data   interface{} `json:"data"`
+	Code   int         `json:"code"`   // 状态码如 200，400，401
+	Status string      `json:"status"` // 状态如 SUCCESS，FAILED
+	Msg    string      `json:"msg"`    // 状态信息
+	Data   interface{} `json:"data"`   // 数据
 }
 
 func ReturnSuccess(c *gin.Context, status string, msg string, data ...interface{}) {

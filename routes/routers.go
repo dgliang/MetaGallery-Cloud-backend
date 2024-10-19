@@ -12,6 +12,10 @@ func Router() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.POST("/register", controllers.UerController{}.Register)
+		api.POST("/login", controllers.UerController{}.Login)
+		api.GET("/getUserInfo", controllers.UerController{}.GetUserInfo)
+		api.POST("/updatePassword", controllers.UerController{}.UpdateUserPassword)
+		api.POST("/updateProfile", controllers.UerController{}.UpdateUserInfo)
 	}
 
 	return r
