@@ -23,7 +23,7 @@ func ReturnSuccess(c *gin.Context, status string, msg string, data ...interface{
 }
 
 func ReturnError(c *gin.Context, status string, msg string) {
-	json := &JsonStruct{Code: http.StatusOK, Status: status, Msg: msg}
+	json := &JsonStruct{Code: http.StatusBadRequest, Status: status, Msg: msg}
 
 	c.JSON(http.StatusOK, json)
 }
