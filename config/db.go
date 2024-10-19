@@ -6,16 +6,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Getdb() (string, string, string, string, string, error) {
+func GetDBEnv() (string, string, string, string, string, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return "", "", "", "", "", err
 	}
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
+	DBHost := os.Getenv("DB_HOST")
+	DBPort := os.Getenv("DB_PORT")
+	DBUser := os.Getenv("DB_USER")
+	DBPassword := os.Getenv("DB_PASSWORD")
+	DBName := os.Getenv("DB_NAME")
 
-	return dbHost, dbPort, dbUser, dbPassword, dbName, nil
+	return DBHost, DBPort, DBUser, DBPassword, DBName, nil
 }
