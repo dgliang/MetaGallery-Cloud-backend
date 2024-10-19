@@ -2,7 +2,6 @@ package dao
 
 import (
 	"MetaGallery-Cloud-backend/config"
-	"MetaGallery-Cloud-backend/models"
 	"fmt"
 	"log"
 
@@ -24,11 +23,11 @@ func DataBaseInit() *gorm.DB {
 	if Err2 != nil {
 		log.Fatalf("Error connecting database")
 	}
-	DataBase.AutoMigrate(&models.User_Data{})
 
 	return DataBase
 }
 
-func GetDB() *gorm.DB {
-	return DataBase
+// init 函数在创建包的时候执行
+func init() {
+	DataBaseInit()
 }
