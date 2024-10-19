@@ -136,5 +136,21 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 }
 
 func (u UerController) UpdateUserInfo(c *gin.Context) {
+	account := c.DefaultPostForm("account", "")
+	newUsername := c.DefaultPostForm("name", "")
+	newIntro := c.DefaultPostForm("info", "")
 
+	if newUsername == "" && newIntro == "" {
+		log.Printf("from %s 修改用户信息未提供新用户名\n", c.Request.Host)
+		ReturnError(c, "FAILED", "提供的账号、原密码不全")
+		return
+	}
+
+	if newUsername == "" {
+		models.UpdateUserData(account, models.User_Data{Brief_Intro: newIntro})
+	} else {
+		models.UpdateUserData(account, models.User_Data{UserName: newUsername, Brief_Intro: newIntro})
+	}
+	log.Printf("from %s 用户 %s 修改资料成功 \n", c.Request.Host, account)
+	ReturnSuccess(c, "SUCCESS", "修改成功")
 }
