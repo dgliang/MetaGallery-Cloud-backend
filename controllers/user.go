@@ -92,8 +92,8 @@ func (u UerController) Login(c *gin.Context) {
 	userInfo := UserInfo{
 		Account: userData.Account,
 		Name:    userData.UserName,
-		Intro:   userData.Brief_Intro,
-		Avatar:  userData.Profile_Photo,
+		Intro:   userData.BriefIntro,
+		Avatar:  userData.ProfilePhoto,
 	}
 	log.Printf("from %s 登录 %s %s %v\n", c.Request.Host, account, password, userInfo)
 	ReturnSuccess(c, "SUCCESS", "", struct {
@@ -121,8 +121,8 @@ func (u UerController) GetUserInfo(c *gin.Context) {
 	userInfo := UserInfo{
 		Account: userData.Account,
 		Name:    userData.UserName,
-		Intro:   userData.Brief_Intro,
-		Avatar:  userData.Profile_Photo,
+		Intro:   userData.BriefIntro,
+		Avatar:  userData.ProfilePhoto,
 	}
 	ReturnSuccess(c, "SUCCESS", "", userInfo)
 }
@@ -131,23 +131,35 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 	account := c.DefaultPostForm("account", "")
 	oldPassword := c.DefaultPostForm("old_password", "")
 	newPassword := c.DefaultPostForm("new_password", "")
+	confirmPassword := c.DefaultPostForm("confirm_password", "")
 
-	if account == "" || oldPassword == "" {
-		log.Printf("from %s 修改密码提供的账号、原密码不全\n", c.Request.Host)
-		ReturnError(c, "FAILED", "提供的账号、原密码不全")
+	if account == "" || oldPassword == "" || newPassword == "" || confirmPassword == "" {
+		log.Printf("from %s 修改密码提供的信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "修改密码提供的信息不全")
+		return
+	}
+
+	if newPassword != confirmPassword {
+		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
+		ReturnError(c, "FAILED", "提供的密码与确认密码不相同")
+		return
+	}
+
+	if oldPassword == newPassword {
+		ReturnError(c, "FAILED", "新密码与旧密码相同，无需修改")
 		return
 	}
 
 	userPd := models.GetPassword(account)
-	if invalid := services.VerifyPassword(userPd, oldPassword); invalid == false {
-		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
-		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
+	if userPd == "" {
+		log.Printf("from %s %s 用户不存在\n", c.Request.Host, account)
+		ReturnError(c, "NOT EXIST", "用户不存在")
 		return
 	}
 
-	if newPassword == "" {
-		log.Printf("from %s 注册提供的账号、密码、确认密码不全\n", c.Request.Host)
-		ReturnError(c, "FAILED", "修改密码失败，密码不能为空")
+	if invalid := services.VerifyPassword(userPd, oldPassword); invalid == false {
+		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
+		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
 		return
 	}
 
@@ -158,7 +170,7 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 		return
 	}
 
-	models.UpdatePassword(account, oldPassword, hashedPd)
+	models.UpdatePassword(account, userPd, hashedPd)
 	log.Printf("from %s 用户 %s 修改密码成功 \n", c.Request.Host, account)
 	ReturnSuccess(c, "SUCCESS", "密码修改成功")
 }
@@ -175,9 +187,9 @@ func (u UerController) UpdateUserInfo(c *gin.Context) {
 	}
 
 	if newUsername == "" {
-		models.UpdateUserData(account, models.User_Data{Brief_Intro: newIntro})
+		models.UpdateUserData(account, models.UserData{BriefIntro: newIntro})
 	} else {
-		models.UpdateUserData(account, models.User_Data{UserName: newUsername, Brief_Intro: newIntro})
+		models.UpdateUserData(account, models.UserData{UserName: newUsername, BriefIntro: newIntro})
 	}
 	log.Printf("from %s 用户 %s 修改资料成功 \n", c.Request.Host, account)
 	ReturnSuccess(c, "SUCCESS", "修改成功")

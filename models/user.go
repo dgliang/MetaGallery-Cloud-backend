@@ -3,98 +3,109 @@ package models
 import (
 	"MetaGallery-Cloud-backend/dao"
 	"MetaGallery-Cloud-backend/services"
-	"fmt"
+	"log"
 	"time"
 )
 
 var DataBase = dao.DataBase
 
-type User_Data struct {
-	Account       string    `gorm:"type:varchar(20); not null; primarykey" json:"account" binding:"required"`
-	UserName      string    `gorm:"type:varchar(20); not null;" json:"username" binding:"required"`
-	Password      string    `gorm:"type:varchar(255); not null;" json:"password" binding:"required"`
-	Brief_Intro   string    `gorm:"type:text;" json:"Brief_Intro"`
-	Profile_Photo string    `gorm:"type:text;" json:"Profile_Photo"`
-	CreatedAt     time.Time // 创建时间（由GORM自动管理）
-	UpdatedAt     time.Time // 最后一次更新时间（由GORM自动管理）
+type UserData struct {
+	Account      string    `gorm:"type:varchar(20); not null; primarykey" json:"account" binding:"required"`
+	UserName     string    `gorm:"type:varchar(20); not null;" json:"username" binding:"required"`
+	Password     string    `gorm:"type:varchar(255); not null;" json:"password" binding:"required"`
+	BriefIntro   string    `gorm:"type:text;" json:"BriefIntro"`
+	ProfilePhoto string    `gorm:"type:text;" json:"ProfilePhoto"`
+	CreatedAt    time.Time // 创建时间（由GORM自动管理）
+	UpdatedAt    time.Time // 最后一次更新时间（由GORM自动管理）
 }
 
 // 由账号密码创建账号信息
 func CreateAccount(Account string, Password string) {
-	ProfilePhotoURL, Err := services.GetAvatarUrl(Account)
-	defaultUserName, _ := services.RandomUsername(Account)
+	profilePhotoURL, err1 := services.GetAvatarUrl(Account)
+	defaultUserName, err2 := services.RandomUsername(Account)
 
-	var User User_Data
-	if Err != nil {
-		fmt.Println(Err)
-		User = User_Data{Account: Account, Password: Password, Brief_Intro: "这个人很懒，什么都没有写"}
+	var userData UserData
+	if err1 != nil || err2 != nil {
+		log.Printf("err1: %v, err2: %v", err1, err2)
+		userData = UserData{
+			Account:    Account,
+			Password:   Password,
+			BriefIntro: "这个人很懒，什么都没有写",
+		}
 	} else {
-		User = User_Data{
-			Account:       Account,
-			Password:      Password,
-			Brief_Intro:   "这个人很懒，什么都没有写",
-			Profile_Photo: ProfilePhotoURL,
-			UserName:      defaultUserName,
+		userData = UserData{
+			Account:      Account,
+			Password:     Password,
+			BriefIntro:   "这个人很懒，什么都没有写",
+			ProfilePhoto: profilePhotoURL,
+			UserName:     defaultUserName,
 		}
 	}
 
-	DataBase.Create(&User)
+	DataBase.Create(&userData)
 
 }
 
 // 由结构体User_Data创建账号信息
-func CreateUserData(UserData User_Data) {
+func CreateUserData(userData UserData) {
 
-	DataBase.Create(&UserData)
+	DataBase.Create(&userData)
 
 }
 
 // 更新账号的密码
-func UpdatePassword(Account string, OriPassword string, NewPassword string) {
+func UpdatePassword(account string, oldPassword string, newPassword string) {
 
-	User := User_Data{Account: Account, Password: OriPassword}
+	userData := UserData{
+		Account:  account,
+		Password: oldPassword,
+	}
 
-	DataBase.Model(&User).Where("account = ?", User.Account).Updates(User_Data{Account: Account, Password: NewPassword})
+	DataBase.Model(&userData).Where("account = ?", userData.Account).Updates(UserData{
+		Account:  account,
+		Password: newPassword,
+	})
 
 }
 
 // 获取账号的密码
-func GetPassword(Account string) string {
+func GetPassword(account string) string {
 
-	var UserData User_Data
+	var userData UserData
 
-	DataBase.Model(&UserData).Where("account= ? ", Account).Find(&UserData)
+	DataBase.Model(&userData).Where("account= ? ", account).Find(&userData)
 
-	return UserData.Password
+	return userData.Password
 }
 
 // 获取账号相关信息
-func GetUserData(Account string) User_Data {
+func GetUserData(account string) UserData {
 
-	var UserData User_Data
+	var userData UserData
 
-	DataBase.Where("account= ? ", Account).Find(&UserData)
+	DataBase.Where("account= ? ", account).Find(&userData)
 
-	return UserData
+	return userData
 }
 
 // 更新账号相关信息，不更新密码
-func UpdateUserData(Account string, NewUserData User_Data) {
-	UserData := User_Data{Account: Account}
+func UpdateUserData(account string, newUserData UserData) {
+	userData := UserData{Account: account}
 
-	if NewUserData.Brief_Intro == "" {
-		NewUserData.Brief_Intro = "这个人很懒，什么都没有写"
+	if newUserData.BriefIntro == "" {
+		newUserData.BriefIntro = "这个人很懒，什么都没有写"
 	}
 
-	DataBase.Model(&UserData).Where("account = ?", Account).Updates(User_Data{
-		Account:       Account,
-		UserName:      NewUserData.UserName,
-		Brief_Intro:   NewUserData.Brief_Intro,
-		Profile_Photo: NewUserData.Profile_Photo})
+	DataBase.Model(&userData).Where("account = ?", account).Updates(UserData{
+		Account:      account,
+		UserName:     newUserData.UserName,
+		BriefIntro:   newUserData.BriefIntro,
+		ProfilePhoto: newUserData.ProfilePhoto,
+	})
 
 }
 
 // 实时更新数据库表结构
 func init() {
-	DataBase.AutoMigrate(&User_Data{})
+	DataBase.AutoMigrate(&UserData{})
 }
