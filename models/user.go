@@ -72,8 +72,17 @@ func GetUserData(Account string) User_Data {
 
 // 更新账号相关信息，不更新密码
 func UpdateUserData(Account string, NewUserData User_Data) {
+	UserData := User_Data{Account: Account}
 
-	DataBase.Model(&NewUserData).Where("account = ?", Account).Updates(User_Data{Account: Account, Brief_Intro: NewUserData.Brief_Intro, Profile_Photo: NewUserData.Profile_Photo})
+	if NewUserData.Brief_Intro == "" {
+		NewUserData.Brief_Intro = "这个人很懒，什么都没有写"
+	}
+
+	DataBase.Model(&UserData).Where("account = ?", Account).Updates(User_Data{
+		Account:       Account,
+		UserName:      NewUserData.UserName,
+		Brief_Intro:   NewUserData.Brief_Intro,
+		Profile_Photo: NewUserData.Profile_Photo})
 
 }
 

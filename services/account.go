@@ -3,10 +3,11 @@ package services
 import (
 	"errors"
 	"fmt"
-	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var hostUrl = ""
@@ -30,6 +31,16 @@ func VerifyPassword(hashedPassword, password string) bool {
 }
 
 func GetAvatarUrl(account string) (string, error) {
+	if account == "" {
+		return "", errors.New("account is empty")
+	}
+
+	firstLetter := strings.ToUpper(string(account[0]))
+	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", hostUrl, firstLetter)
+	return avatarUrl, nil
+}
+
+func RandomUsername(account string) (string, error) {
 	if account == "" {
 		return "", errors.New("account is empty")
 	}
