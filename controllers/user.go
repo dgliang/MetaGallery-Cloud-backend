@@ -91,7 +91,7 @@ func (u UerController) Login(c *gin.Context) {
 
 	userInfo := UserInfo{
 		Account: userData.Account,
-		Name:    "name",
+		Name:    userData.UserName,
 		Intro:   userData.Brief_Intro,
 		Avatar:  userData.Profile_Photo,
 	}
@@ -120,7 +120,7 @@ func (u UerController) GetUserInfo(c *gin.Context) {
 
 	userInfo := UserInfo{
 		Account: userData.Account,
-		Name:    "name",
+		Name:    userData.UserName,
 		Intro:   userData.Brief_Intro,
 		Avatar:  userData.Profile_Photo,
 	}
