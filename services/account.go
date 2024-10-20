@@ -3,8 +3,10 @@ package services
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
@@ -41,11 +43,20 @@ func GetAvatarUrl(account string) (string, error) {
 }
 
 func RandomUsername(account string) (string, error) {
-	if account == "" {
-		return "", errors.New("account is empty")
+	if len(account) < 3 {
+		return "", errors.New("account is too short, less than 3 characters")
 	}
 
-	firstLetter := strings.ToUpper(string(account[0]))
-	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", hostUrl, firstLetter)
-	return avatarUrl, nil
+	prefix := account[:3]
+	charSet := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	rand.Seed(time.Now().UnixNano())
+	remainLen := 10 - len("MGC") - len(prefix)
+	randomSuffix := make([]byte, remainLen)
+	for i := range randomSuffix {
+		randomSuffix[i] = charSet[rand.Intn(len(charSet))]
+	}
+
+	userName := "MGC" + prefix + string(randomSuffix)
+	return userName, nil
 }

@@ -22,12 +22,20 @@ type User_Data struct {
 // 由账号密码创建账号信息
 func CreateAccount(Account string, Password string) {
 	ProfilePhotoURL, Err := services.GetAvatarUrl(Account)
+	defaultUserName, _ := services.RandomUsername(Account)
+
 	var User User_Data
 	if Err != nil {
 		fmt.Println(Err)
 		User = User_Data{Account: Account, Password: Password, Brief_Intro: "这个人很懒，什么都没有写"}
 	} else {
-		User = User_Data{Account: Account, Password: Password, Brief_Intro: "这个人很懒，什么都没有写", Profile_Photo: ProfilePhotoURL}
+		User = User_Data{
+			Account:       Account,
+			Password:      Password,
+			Brief_Intro:   "这个人很懒，什么都没有写",
+			Profile_Photo: ProfilePhotoURL,
+			UserName:      defaultUserName,
+		}
 	}
 
 	DataBase.Create(&User)
