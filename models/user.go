@@ -17,6 +17,10 @@ type UserData struct {
 	ProfilePhoto string    `gorm:"type:text;" json:"ProfilePhoto"`
 	CreatedAt    time.Time // 创建时间（由GORM自动管理）
 	UpdatedAt    time.Time // 最后一次更新时间（由GORM自动管理）
+
+	//外键约束
+	FileData   []FileData   `gorm:"foreignKey:BelongTo"`
+	FolderData []FolderData `gorm:"foreignKey:BelongTo"`
 }
 
 // 由账号密码创建账号信息
