@@ -24,7 +24,7 @@ type FileData struct {
 
 	//外键约束
 	User         UserData   `gorm:"foreignKey:BelongTo"`
-	ParentFolder FolderData `gorm:"foreignKey:ParentFolderID"`
+	ParentFolder FolderData `gorm:"foreignKey:ParentFolderID;constraint:OnDelete:CASCADE;"`
 }
 
 // type User struct {

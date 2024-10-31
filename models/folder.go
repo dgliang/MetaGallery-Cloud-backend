@@ -22,9 +22,9 @@ type FolderData struct {
 	BinDate        time.Time
 
 	//外键约束
-	User     UserData     `gorm:"foreignKey:BelongTo;"`
-	SubFiles []FolderData `gorm:"foreignKey:ParentFolder;references:ID"`
-	Files    []FileData   `gorm:"foreignKey:ParentFolderID"`
+	User       UserData     `gorm:"foreignKey:BelongTo;"`
+	SubFolders []FolderData `gorm:"foreignKey:ParentFolder;references:ID;constraint:OnDelete:CASCADE;"`
+	Files      []FileData   `gorm:"foreignKey:ParentFolderID;constraint:OnDelete:CASCADE;"`
 }
 
 func init() {

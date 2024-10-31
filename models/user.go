@@ -10,7 +10,7 @@ import (
 var DataBase = dao.DataBase
 
 type UserData struct {
-	ID           uint      `gorm:"primarykey"`
+	ID           uint      `gorm:"primarykey;not null;autoIncrement"`
 	Account      string    `gorm:"type:varchar(20); not null; primarykey" json:"account" binding:"required"`
 	UserName     string    `gorm:"type:varchar(20); not null;" json:"username" binding:"required"`
 	Password     string    `gorm:"type:varchar(255); not null;" json:"password" binding:"required"`
