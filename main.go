@@ -15,6 +15,7 @@ func main() {
 		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},            // 允许的 HTTP 方法
 		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"}, // 允许的请求头
 	}))
+
 	routes.Router(r)
 	// 提供静态文件服务
 	r.Static("/resources", "./resources")

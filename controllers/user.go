@@ -44,7 +44,30 @@ func (u UerController) Register(c *gin.Context) {
 		return
 	}
 
-	models.CreateAccount(account, hashedPd)
+	avatar, err := services.GetAvatarUrl(account)
+	if err != nil {
+		ReturnServerError(c, "GetAvatarUrl"+err.Error())
+		return
+	}
+	userName, err := services.RandomUsername(account)
+	if err != nil {
+		ReturnServerError(c, "RandomUsername"+err.Error())
+		return
+	}
+
+	userID, err := models.CreateAccount(account, hashedPd, avatar, userName)
+	if err != nil {
+		ReturnServerError(c, "CreateAccount"+err.Error())
+		return
+	}
+
+	// 为用户创建最初的根目录
+	err = services.GenerateRootFolder(userID)
+	if err != nil {
+		ReturnServerError(c, "GenerateRootFolder"+err.Error())
+		return
+	}
+
 	log.Printf("from %s 注册 %s %s %s\n", c.Request.Host, account, password, confirmPassword)
 	ReturnSuccess(c, "SUCCESS", "账号注册成功")
 }

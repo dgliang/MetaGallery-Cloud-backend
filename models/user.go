@@ -2,8 +2,7 @@ package models
 
 import (
 	"MetaGallery-Cloud-backend/dao"
-	"MetaGallery-Cloud-backend/services"
-	"log"
+	"errors"
 	"time"
 )
 
@@ -25,30 +24,20 @@ type UserData struct {
 }
 
 // 由账号密码创建账号信息
-func CreateAccount(Account string, Password string) {
-	profilePhotoURL, err1 := services.GetAvatarUrl(Account)
-	defaultUserName, err2 := services.RandomUsername(Account)
-
+func CreateAccount(Account, Password, avatar, userName string) (uint, error) {
 	var userData UserData
-	if err1 != nil || err2 != nil {
-		log.Printf("err1: %v, err2: %v", err1, err2)
-		userData = UserData{
-			Account:    Account,
-			Password:   Password,
-			BriefIntro: "这个人很懒，什么都没有写",
-		}
-	} else {
-		userData = UserData{
-			Account:      Account,
-			Password:     Password,
-			BriefIntro:   "这个人很懒，什么都没有写",
-			ProfilePhoto: profilePhotoURL,
-			UserName:     defaultUserName,
-		}
+	userData = UserData{
+		Account:      Account,
+		Password:     Password,
+		BriefIntro:   "这个人很懒，什么都没有写",
+		ProfilePhoto: avatar,
+		UserName:     userName,
 	}
 
-	DataBase.Create(&userData)
-
+	if err := DataBase.Create(&userData).Error; err != nil {
+		return 0, err
+	}
+	return userData.ID, nil
 }
 
 // 由结构体User_Data创建账号信息
@@ -113,4 +102,14 @@ func UpdateUserData(account string, newUserData UserData) {
 // 实时更新数据库表结构
 func init() {
 	DataBase.AutoMigrate(&UserData{})
+}
+
+func GetUserID(account string) (uint, error) {
+	if account == "" {
+		return 0, errors.New("数据库查询 UserID 时账号不能为空")
+	}
+
+	var userData UserData
+	DataBase.Where("account= ? ", account).Find(&userData)
+	return userData.ID, nil
 }
