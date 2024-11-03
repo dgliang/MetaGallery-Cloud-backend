@@ -82,6 +82,17 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		return
 	}
 
+	// 判断文件夹是否已经被创建过了
+	isExist, err := services.IsExist(userID, req.ParentID, req.FolderName)
+	if err != nil {
+		ReturnServerError(c, "IsExist"+err.Error())
+		return
+	}
+	if isExist {
+		ReturnError(c, "FAILED", "文件夹已经被创建了，无法再次创建")
+		return
+	}
+
 	path, err := services.GenerateFolderPath(userID, req.ParentID, req.FolderName)
 	if err != nil {
 		ReturnServerError(c, "GenerateFolderPath: "+err.Error())
@@ -105,4 +116,64 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		IsDeleted:  folderData.InBin,
 	}
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
+}
+
+type ChildFolderReq struct {
+	Account  string `json:"account" binding:"required"`
+	FolderId uint   `json:"folder_id" binding:"required"`
+}
+
+func (receiver FolderController) GetChildFolders(c *gin.Context) {
+	var req ChildFolderReq
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供查看子文件夹的信息不全")
+		return
+	}
+
+	userID, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID"+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "FAILED", "用户不存在")
+		return
+	}
+
+	foldersData, err := models.ListChildFolders(userID, req.FolderId)
+	if err != nil {
+		ReturnServerError(c, "ListChildFolders: "+err.Error())
+		return
+	}
+	if foldersData == nil {
+		ReturnError(c, "FAILED", "folder_id 对应的文件夹不存在")
+		return
+	}
+
+	folderRes := matchFolderResJson(foldersData)
+	ReturnSuccess(c, "SUCCESS", "", folderRes)
+}
+
+func matchFolderResJson(foldersData []models.FolderData) []FolderJson {
+	if len(foldersData) == 0 {
+		return nil
+	}
+
+	var folderJson []FolderJson
+	for _, folderData := range foldersData {
+		folderJson = append(folderJson, FolderJson{
+			ID:         folderData.ID,
+			User:       folderData.BelongTo,
+			FolderName: folderData.FolderName,
+			ParentID:   folderData.ParentFolder,
+			Path:       folderData.Path,
+			IsFavorite: folderData.Favorite,
+			IsShare:    folderData.Share,
+			IsDeleted:  folderData.InBin,
+			IPFSHash:   folderData.IPFSInformation,
+			DeleteTime: folderData.BinDate.String(),
+		})
+	}
+	return folderJson
 }

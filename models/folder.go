@@ -78,3 +78,21 @@ func GetParentFolderPath(userID, parentID uint) (string, error) {
 	}
 	return folderData.Path, nil
 }
+
+func ListChildFolders(userID, folderID uint) ([]FolderData, error) {
+	var folders []FolderData
+
+	err := DataBase.Where("belong_to = ? AND parent_folder = ?", userID, folderID).Find(&folders).Error
+	if err != nil {
+		return []FolderData{}, err
+	}
+	return folders, nil
+}
+
+func GetFolderId(userId, parentId uint, folderName string) (uint, error) {
+	var folder FolderData
+
+	DataBase.Where("belong_to = ? AND parent_folder = ? AND folder_name = ?",
+		userId, parentId, folderName).First(&folder)
+	return folder.ID, nil
+}

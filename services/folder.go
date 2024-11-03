@@ -47,3 +47,16 @@ func GenerateFolderPath(userID, parentID uint, folderName string) (string, error
 	path = fmt.Sprintf("%s/%s", parentPath, folderName)
 	return path, nil
 }
+
+func IsExist(userId, parentId uint, folderName string) (bool, error) {
+	isExist, err := models.GetFolderId(userId, parentId, folderName)
+
+	if err != nil {
+		return false, err
+	}
+
+	if isExist == 0 {
+		return false, nil
+	}
+	return true, nil
+}
