@@ -39,4 +39,5 @@ go.work.sum
 *.swo
 
 # 用户文件
-resources/files/
+resources/files/*
+!resources/files/
