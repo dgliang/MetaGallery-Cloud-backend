@@ -62,8 +62,8 @@ func GetRootFolderData(userID uint) (FolderData, error) {
 	var folder FolderData
 
 	folderName := fmt.Sprintf("%d", userID)
-	if err := DataBase.Where("belong_to = ? AND folder_name = ?", userID, folderName).
-		First(&folder).Error; err != nil {
+	if err := DataBase.Where("belong_to = ? AND folder_name = ? AND parent_folder IS NULL",
+		userID, folderName).First(&folder).Error; err != nil {
 		return FolderData{}, err
 	}
 	return folder, nil
