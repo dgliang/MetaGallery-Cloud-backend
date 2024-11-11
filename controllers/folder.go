@@ -3,6 +3,7 @@ package controllers
 import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,14 +55,14 @@ func (receiver FolderController) GetRootFolder(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
 
-type folderRequest struct {
+type createFolderRequest struct {
 	Account    string `json:"account" binding:"required"`
 	ParentID   uint   `json:"parent_id" binding:"required"`
 	FolderName string `json:"folder_name" binding:"required"`
 }
 
 func (receiver FolderController) CreateFolder(c *gin.Context) {
-	var req folderRequest
+	var req createFolderRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ReturnError(c, "FAILED", "解析 JSON Request："+err.Error())
@@ -114,13 +115,13 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
 
-type ChildFolderReq struct {
+type childFolderRequest struct {
 	Account  string `json:"account" binding:"required"`
 	FolderId uint   `json:"folder_id" binding:"required"`
 }
 
 func (receiver FolderController) GetChildFolders(c *gin.Context) {
-	var req ChildFolderReq
+	var req childFolderRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ReturnError(c, "FAILED", "提供查看子文件夹的信息不全")
@@ -238,4 +239,64 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 		ParentID:   folderData.ParentFolder,
 	}
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
+}
+
+type favoriteFolderRequest struct {
+	Account    string `json:"account" binding:"required"`
+	FolderId   uint   `json:"folder_id" binding:"required"`
+	IsFavorite int    `json:"is_favorite" binding:"required"`
+}
+
+func (receiver FolderController) FavoriteFolder(c *gin.Context) {
+	var req favoriteFolderRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
+		return
+	}
+
+	// 验证 IsFavorite 的取值是否为 1 或者 2
+	var favoriteStatus bool
+	if req.IsFavorite == 1 {
+		favoriteStatus = false
+	} else if req.IsFavorite == 2 {
+		favoriteStatus = true
+	} else {
+		ReturnError(c, "FAILED", "is_favorite 的取值只能是 1 或者 2")
+		return
+	}
+
+	userID, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID"+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "FAILED", "提供的用户不存在")
+		return
+	}
+
+	folderData, err1 := models.GetFolderDataByID(req.FolderId)
+	if err1 != nil {
+		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
+		return
+	}
+	if folderData.ID == 0 {
+		ReturnError(c, "FAILED", "文件夹不存在")
+		return
+	}
+	//if folderData.Favorite == favoriteStatus {
+	//	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("修改文件夹收藏状态为 %t", favoriteStatus))
+	//	return
+	//}
+
+	// 更新文件夹的收藏状态
+	err = services.SetFolderFavorite(userID, req.FolderId, favoriteStatus)
+	if err != nil {
+		ReturnServerError(c, "SetFolderFavorite: "+err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
+		req.Account, req.FolderId, favoriteStatus))
 }

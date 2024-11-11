@@ -27,5 +27,6 @@ func Router(r *gin.Engine) {
 		api.POST("/createFolder", controllers.FolderController{}.CreateFolder)
 		api.GET("/loadFolder/getChildrenInfo", controllers.FolderController{}.GetChildFolders)
 		api.POST("/renameFolder", controllers.FolderController{}.RenameFolder)
+		api.POST("/favoriteFolder", controllers.FolderController{}.FavoriteFolder)
 	}
 }

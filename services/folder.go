@@ -197,3 +197,50 @@ func updateFolderPath(oldPath, newPath string) error {
 	err := os.Rename(oldFullPath, newFullPath)
 	return err
 }
+
+func SetFolderFavorite(userID, folderID uint, isFavorite bool) error {
+	return models.DataBase.Transaction(func(tx *gorm.DB) error {
+
+		// 获取当前文件夹信息
+		var folder models.FolderData
+		if err := tx.First(&folder, "id = ? AND belong_to = ?", folderID, userID).Error; err != nil {
+			return fmt.Errorf("SetFolderFavorite: %w", err)
+		}
+
+		// 获取当前文件夹的 Path
+		rootPath := folder.Path
+
+		// 更新当前文件夹的 Favorite
+		folder.Favorite = isFavorite
+		if err := tx.Save(&folder).Error; err != nil {
+			return fmt.Errorf("SetFolderFavorite: %w", err)
+		}
+
+		// 更新所有子文件夹的 Favorite
+		if err := setChildFolderFavorite(tx, userID, rootPath, isFavorite); err != nil {
+			return fmt.Errorf("SetFolderFavorite: %w", err)
+		}
+
+		// 更新所有子文件的 Favorite
+
+		return nil
+	})
+}
+
+func setChildFolderFavorite(tx *gorm.DB, userID uint, rootPath string, isFavorite bool) error {
+	rootPath = strings.ReplaceAll(strings.TrimSpace(rootPath), "\\", "/")
+
+	var subFolders []models.FolderData
+	if err := tx.Where("path LIKE ? AND belong_to = ?", rootPath+"/%", userID).
+		Find(&subFolders).Error; err != nil {
+		return fmt.Errorf("setChildFolderFavorite: %w", err)
+	}
+
+	for _, folder := range subFolders {
+		folder.Favorite = isFavorite
+		if err := tx.Save(&folder).Error; err != nil {
+			return fmt.Errorf("setChildFolderFavorite: %w", err)
+		}
+	}
+	return nil
+}
