@@ -5,6 +5,7 @@ import (
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type FolderController struct{}
@@ -51,6 +52,45 @@ func (receiver FolderController) GetRootFolder(c *gin.Context) {
 		Path:       folderData.Path,
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
+	}
+	ReturnSuccess(c, "SUCCESS", "", folderRes)
+}
+
+func (receiver FolderController) GetFolderInfo(c *gin.Context) {
+	account := c.Query("account")
+	folderId := c.Query("folder_id")
+
+	if account == "" || folderId == "" {
+		ReturnError(c, "FAILED", "提供的 account 和 folder_id 信息不全")
+		return
+	}
+
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID"+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "FAILED", "提供的 account 用户不存在")
+		return
+	}
+
+	folderIdUint64, _ := strconv.ParseUint(folderId, 10, 64)
+	folderData, err1 := models.GetFolderDataByID(uint(folderIdUint64))
+	if err1 != nil {
+		ReturnServerError(c, "GetFolderDataByID"+err1.Error())
+		return
+	}
+
+	folderRes := FolderJson{
+		ID:         folderData.ID,
+		User:       folderData.BelongTo,
+		FolderName: folderData.FolderName,
+		ParentID:   folderData.ParentFolder,
+		Path:       folderData.Path,
+		IsFavorite: folderData.Favorite,
+		IsShare:    folderData.Share,
+		IPFSHash:   folderData.IPFSInformation,
 	}
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
