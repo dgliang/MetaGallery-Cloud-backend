@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"MetaGallery-Cloud-backend/models"
+	"MetaGallery-Cloud-backend/services"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 type FileController struct{}
 
-type FileJson struct {
+type FileBriefJson struct {
 	ID         uint   `json:"id"`
 	User       uint   `json:"user"`
 	FileName   string `json:"file_name"`
@@ -57,7 +58,7 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 
 	//读取文件内容
-	file, _, err := c.Request.FormFile("file_context")
+	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		log.Printf("from %s 接收文件失败\n", c.Request.Host)
 		ReturnError(c, "FAILED", "接受文件失败")
@@ -73,7 +74,7 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintPID := uint(PID)
 
-	path, err := models.GetFilePath(userID, fileName, uintPID)
+	path, err := models.GenerateFilePath(userID, uintPID, fileName)
 	if err != nil {
 		fmt.Println("文件路径生成失败:", err)
 		ReturnServerError(c, "文件路径生成失败")
@@ -81,8 +82,8 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 	//在本地创建文件
 
-	out, err := os.Create("userFiles" + path)
-	//out, err := os.Create(path)
+	out, err := os.Create("resources/files" + path)
+	log.Printf("resources/files" + path)
 	if err != nil {
 		log.Printf("from %s 创建文件失败\n", c.Request.Host)
 		ReturnServerError(c, "服务器创建文件失败")
@@ -104,7 +105,7 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 		return
 	}
 
-	fileRes := FileJson{
+	fileRes := FileBriefJson{
 		ID:         newfile.ID,
 		User:       newfile.BelongTo,
 		FileName:   newfile.FileName,
@@ -116,7 +117,6 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, "SUCCESS", "", fileRes)
-
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
@@ -153,10 +153,12 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintFID := uint(FID)
 
-	models.RenameFileWithFileID(uintFID, newFileName)
+	if err := services.RenameFileAndUpdatePath(userID, uintFID, newFileName); err != nil {
+		ReturnError(c, "FAILED", "重命名失败:"+err.Error())
+		return
+	}
 
-	ReturnSuccess(c, "SUCCESS", "", models.FileData{})
-
+	ReturnSuccess(c, "SUCCESS", "", FileBriefJson{})
 }
 
 type getFilesJson struct {
@@ -247,4 +249,60 @@ func (receiver FileController) GetFileData(c *gin.Context) {
 	}
 
 	ReturnSuccess(c, "SUCCESS", "", fileData)
+}
+
+type favoriteFileRequest struct {
+	Account    string `json:"account" binding:"required"`
+	FileId     uint   `json:"file_id" binding:"required"`
+	IsFavorite int    `json:"is_favorite" binding:"required"`
+}
+
+func (receiver FileController) FavoriteFile(c *gin.Context) {
+	var req favoriteFileRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
+		return
+	}
+
+	// 验证 IsFavorite 的取值是否为 1 或者 2
+	var favoriteStatus bool
+	if req.IsFavorite == 1 {
+		favoriteStatus = false
+	} else if req.IsFavorite == 2 {
+		favoriteStatus = true
+	} else {
+		ReturnError(c, "FAILED", "is_favorite 的取值只能是 1 或者 2")
+		return
+	}
+
+	userID, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID"+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "FAILED", "提供的用户不存在")
+		return
+	}
+
+	fileData, err1 := models.GetFileData(req.FileId)
+	if err1 != nil {
+		ReturnServerError(c, "GetFileData: "+err1.Error())
+		return
+	}
+	if fileData.ID == 0 {
+		ReturnError(c, "FAILED", "文件不存在")
+		return
+	}
+
+	// 更新文件夹的收藏状态
+	if favoriteStatus {
+		models.SetFileFavorite(req.FileId)
+	} else {
+		models.CancelFileFavorite(req.FileId)
+	}
+
+	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
+		req.Account, req.FileId, favoriteStatus))
 }

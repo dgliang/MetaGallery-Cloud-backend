@@ -34,7 +34,9 @@ func Router(r *gin.Engine) {
 		// 文件管理
 		api.POST("/uploadFile", controllers.FileController{}.UploadFile)
 		api.POST("/renameFile", controllers.FileController{}.RenameFile)
+		api.POST("/favoriteFile", controllers.FileController{}.FavoriteFile)
 		api.GET("/loadFolder/getSubFileinfo", controllers.FileController{}.GetSubFiles)
 		api.GET("/getFileData", controllers.FileController{}.GetFileData)
+
 	}
 }

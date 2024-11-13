@@ -1,6 +1,7 @@
 package models
 
 import (
+	"path"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,18 +41,50 @@ func init() {
 	DataBase.AutoMigrate(&FileData{})
 }
 
-func GetFilePath(userID uint, fileName string, parentFolderID uint) (string, error) {
-	parentFloderPath, err := GetParentFolderPath(userID, parentFolderID)
+// func GetFilePath(userID uint, fileName string, parentFolderID uint) (string, error) {
+// 	parentFloderPath, err := GetParentFolderPath(userID, parentFolderID)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	filepath := parentFloderPath + "/" + fileName
+
+// 	return filepath, nil
+// }
+
+func GetFilePath(fileID uint) (string, error) {
+	var fileData FileData
+	if err := DataBase.Model(&FileData{}).Where(" id = ?", fileID).Find(&fileData).Error; err != nil {
+		return "", err
+	}
+	filePath := fileData.Path
+
+	return filePath, nil
+}
+
+func GetParentFolderID(fileID uint) (uint, error) {
+	var fileData FileData
+	DataBase.Model(&FileData{}).Where(" id = ?", fileID).Find(&fileData)
+
+	PID := fileData.ParentFolderID
+
+	return PID, nil
+}
+
+func GenerateFilePath(userID, parentFolderID uint, fileName string) (string, error) {
+	var filePath string
+
+	parentPath, err := GetParentFolderPath(userID, parentFolderID)
 	if err != nil {
 		return "", err
 	}
-	filepath := parentFloderPath + "/" + fileName
 
-	return filepath, nil
+	filePath = path.Join(parentPath, fileName)
+
+	return filePath, nil
 }
 
 func CreateFileData(userID uint, fileName string, parentFolderID uint) (FileData, error) {
-	filePath, err := GetFilePath(userID, fileName, parentFolderID)
+	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
 	if err != nil {
 		return FileData{}, err
 	}
@@ -114,7 +147,7 @@ func RenameFile(userID uint, oldfilename string, newFileName string, parentFolde
 	var originFileData FileData
 	DataBase.Model(&FileData{}).Where("belong_to = ? AND parent_folder_id = ? AND file_name = ?", userID, parentFolderID, oldfilename).First(&originFileData)
 
-	newFilePath, err := GetFilePath(originFileData.BelongTo, newFileName, originFileData.ParentFolderID)
+	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
 	if err != nil {
 		return err
 	}
@@ -128,15 +161,25 @@ func RenameFileWithFileID(fileID uint, newFileName string) error {
 		ID: fileID,
 	}
 	var originFileData FileData
-	DataBase.Model(&File).First(&originFileData)
+	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
 
-	newFilePath, err := GetFilePath(originFileData.BelongTo, newFileName, originFileData.ParentFolderID)
+	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
 	if err != nil {
 		return err
 	}
 
 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
 	return nil
+}
+
+func GetFileID(userId, parentId uint, fileName string) (uint, error) {
+	var file FileData
+
+	if err := DataBase.Where("belong_to = ? AND parent_folder_id = ? AND file_name = ?",
+		userId, parentId, fileName).First(&file).Error; err != nil {
+		return 0, nil
+	}
+	return file.ID, nil
 }
 
 func GetFileData(fileID uint) (FileData, error) {
@@ -167,4 +210,17 @@ func GetSubFiles(parentFolderID uint) ([]FileBrief, error) {
 	}
 
 	return fileBriefs, nil
+}
+
+func SetFileFavorite(fileID uint) {
+	DataBase.Model(&FileData{}).Where("id = ?", fileID).Updates(FileData{
+		Favorite: true,
+	})
+}
+
+func CancelFileFavorite(fileID uint) {
+	var file FileData
+	DataBase.Model(&FileData{}).Where("id = ?", fileID).Find(&file)
+	file.Favorite = false
+	DataBase.Save(&file)
 }

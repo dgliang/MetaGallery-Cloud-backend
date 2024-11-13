@@ -4,12 +4,13 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"errors"
 	"fmt"
-	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 	"log"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 var FileDirPath string
