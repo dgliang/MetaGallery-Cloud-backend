@@ -16,8 +16,6 @@ type FolderData struct {
 	Favorite        bool `gorm:"index; default:false"`
 	Share           bool `gorm:"default:false"`
 	IPFSInformation string
-	InBin           bool      `gorm:"default:false"`
-	BinDate         time.Time `gorm:"default:NULL"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
@@ -63,8 +61,8 @@ func GetRootFolderData(userID uint) (FolderData, error) {
 	var folder FolderData
 
 	folderName := fmt.Sprintf("%d", userID)
-	if err := DataBase.Where("belong_to = ? AND folder_name = ?", userID, folderName).
-		First(&folder).Error; err != nil {
+	if err := DataBase.Where("belong_to = ? AND folder_name = ? AND parent_folder IS NULL",
+		userID, folderName).First(&folder).Error; err != nil {
 		return FolderData{}, err
 	}
 	return folder, nil
@@ -78,4 +76,32 @@ func GetParentFolderPath(userID, parentID uint) (string, error) {
 		return "", err
 	}
 	return folderData.Path, nil
+}
+
+func ListChildFolders(userID, folderID uint) ([]FolderData, error) {
+	var folders []FolderData
+
+	err := DataBase.Where("belong_to = ? AND parent_folder = ?", userID, folderID).Find(&folders).Error
+	if err != nil {
+		return []FolderData{}, err
+	}
+	return folders, nil
+}
+
+func GetFolderId(userId, parentId uint, folderName string) (uint, error) {
+	var folder FolderData
+
+	DataBase.Where("belong_to = ? AND parent_folder = ? AND folder_name = ?",
+		userId, parentId, folderName).First(&folder)
+	return folder.ID, nil
+}
+
+func GetFolderDataByID(folderId uint) (FolderData, error) {
+	var folder FolderData
+
+	err := DataBase.Where("id = ?", folderId).First(&folder).Error
+	if err != nil {
+		return FolderData{}, err
+	}
+	return folder, nil
 }

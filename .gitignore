@@ -37,3 +37,7 @@ go.work.sum
 *.tmp
 *.swp
 *.swo
+
+# 用户文件
+resources/files/*
+!resources/files/

@@ -162,17 +162,6 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 		return
 	}
 
-	if newPassword != confirmPassword {
-		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
-		ReturnError(c, "FAILED", "提供的密码与确认密码不相同")
-		return
-	}
-
-	if oldPassword == newPassword {
-		ReturnError(c, "FAILED", "新密码与旧密码相同，无需修改")
-		return
-	}
-
 	userPd := models.GetPassword(account)
 	if userPd == "" {
 		log.Printf("from %s %s 用户不存在\n", c.Request.Host, account)
@@ -183,6 +172,17 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 	if invalid := services.VerifyPassword(userPd, oldPassword); invalid == false {
 		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
 		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
+		return
+	}
+
+	if oldPassword == newPassword {
+		ReturnError(c, "FAILED", "新密码与旧密码相同，无需修改")
+		return
+	}
+
+	if newPassword != confirmPassword {
+		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
+		ReturnError(c, "FAILED", "提供的密码与确认密码不相同")
 		return
 	}
 

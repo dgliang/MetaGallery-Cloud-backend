@@ -26,6 +26,10 @@ func Router(r *gin.Engine) {
 		// 文件夹管理
 		api.GET("/getRootFolder", controllers.FolderController{}.GetRootFolder)
 		api.POST("/createFolder", controllers.FolderController{}.CreateFolder)
+		api.GET("/loadFolder/getChildrenInfo", controllers.FolderController{}.GetChildFolders)
+		api.POST("/renameFolder", controllers.FolderController{}.RenameFolder)
+		api.POST("/favoriteFolder", controllers.FolderController{}.FavoriteFolder)
+		api.GET("/loadFolder/getFolderInfo", controllers.FolderController{}.GetFolderInfo)
 
 		// 文件管理
 		api.POST("/uploadFile", controllers.FileController{}.UploadFile)
