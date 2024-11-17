@@ -3,7 +3,6 @@ package routes
 import (
 	"MetaGallery-Cloud-backend/controllers"
 	"MetaGallery-Cloud-backend/middlewares"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,6 +29,7 @@ func Router(r *gin.Engine) {
 		api.POST("/renameFolder", controllers.FolderController{}.RenameFolder)
 		api.POST("/favoriteFolder", controllers.FolderController{}.FavoriteFolder)
 		api.GET("/loadFolder/getFolderInfo", controllers.FolderController{}.GetFolderInfo)
+		api.DELETE("/removeFolder", controllers.BinController{}.RemoveFolder)
 
 		// 文件管理
 		api.POST("/uploadFile", controllers.FileController{}.UploadFile)
