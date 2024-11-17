@@ -105,3 +105,13 @@ func GetFolderDataByID(folderId uint) (FolderData, error) {
 	}
 	return folder, nil
 }
+
+func GetBinFolderDataByID(folderId uint) (FolderData, error) {
+	var folder FolderData
+
+	err := DataBase.Unscoped().Where("id = ?", folderId).First(&folder).Error
+	if err != nil {
+		return FolderData{}, err
+	}
+	return folder, nil
+}
