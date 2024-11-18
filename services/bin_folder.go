@@ -2,12 +2,13 @@ package services
 
 import (
 	"MetaGallery-Cloud-backend/models"
-	"gorm.io/gorm"
 	"log"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func RemoveFolder(userId, folderID uint) error {
@@ -129,4 +130,50 @@ func deleteOSFolder(folderPath string) error {
 	folderPath = path.Join(FileDirPath, folderPath)
 	err := os.RemoveAll(folderPath)
 	return err
+}
+
+type FolderBinInfo struct {
+	models.FolderData
+	BinId   uint
+	DelTime time.Time
+}
+
+func ListBinFolders(userId uint) ([]FolderBinInfo, error) {
+	// 获取 Bin 回收站中文件夹
+	var binRecord []models.Bin
+	if err := models.DataBase.Where("user_id = ? AND type = ?", userId, models.FOLDER).
+		Find(&binRecord).Error; err != nil {
+		return nil, err
+	}
+
+	var folderBinInfo []FolderBinInfo
+	for _, bin := range binRecord {
+		// 获取 folderBin 中对应的记录
+		folderBin, err := getFolderBinDataByBinId(bin.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		// 获取 folderData 中对应的记录
+		var folder models.FolderData
+		if err := models.DataBase.Unscoped().First(&folder, "id = ?", folderBin.FolderID).Error; err != nil {
+			return nil, err
+		}
+
+		folderBinInfo = append(folderBinInfo, FolderBinInfo{
+			FolderData: folder,
+			BinId:      bin.ID,
+			DelTime:    bin.DeletedTime,
+		})
+	}
+
+	return folderBinInfo, nil
+}
+
+func getFolderBinDataByBinId(binId uint) (models.FolderBin, error) {
+	var folderBin models.FolderBin
+	if err := models.DataBase.Where("bin_id = ?", binId).First(&folderBin).Error; err != nil {
+		return folderBin, err
+	}
+	return folderBin, nil
 }

@@ -4,6 +4,7 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -94,4 +95,62 @@ func (b BinController) DeleteFolder(c *gin.Context) {
 		return
 	}
 	ReturnSuccess(c, "SUCCESS", "删除成功")
+}
+
+type FolderBinJson struct {
+	FolderJson
+	BinId   uint   `json:"bin_id"`
+	DelTime string `json:"del_time"`
+}
+
+func (b BinController) ListBinFolder(c *gin.Context) {
+	account := c.Query("account")
+	if account == "" {
+		ReturnError(c, "FAILED", "查看回收站中文件夹信息时 account 不全")
+		return
+	}
+
+	userId, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID: "+err.Error())
+		return
+	}
+	if userId == 0 {
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", account))
+		return
+	}
+
+	folderData, err := services.ListBinFolders(userId)
+	if err != nil {
+		ReturnServerError(c, "ListBinFolders: "+err.Error())
+		return
+	}
+
+	folderBinRes := matchFolderBinResJson(folderData)
+	ReturnSuccess(c, "SUCCESS", "", folderBinRes)
+}
+
+func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson {
+	if len(folderData) == 0 {
+		return nil
+	}
+
+	var folderBinJson []FolderBinJson
+	for _, folder := range folderData {
+		folderBinJson = append(folderBinJson, FolderBinJson{
+			FolderJson{
+				ID:         folder.FolderData.ID,
+				User:       folder.FolderData.BelongTo,
+				FolderName: folder.FolderData.FolderName,
+				ParentID:   folder.FolderData.ParentFolder,
+				Path:       folder.FolderData.Path,
+				IsFavorite: folder.FolderData.Favorite,
+				IsShare:    folder.FolderData.Share,
+				IPFSHash:   folder.FolderData.IPFSInformation,
+			},
+			folder.BinId,
+			folder.DelTime.Format("2006-01-02 15:04:05"),
+		})
+	}
+	return folderBinJson
 }
