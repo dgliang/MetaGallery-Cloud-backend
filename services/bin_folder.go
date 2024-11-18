@@ -2,6 +2,8 @@ package services
 
 import (
 	"MetaGallery-Cloud-backend/models"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -19,8 +21,50 @@ func RemoveFolder(userId, folderID uint) error {
 			return err
 		}
 
-		// 将文件夹数据插入到回收站表 Bin
 		delTime := time.Now()
+
+		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
+		newFolderName := GenerateBinTimestamp(folder.FolderName, delTime)
+
+		// 检查同一文件夹下是否存在同名的子文件夹
+		var count int64
+		if err := tx.Model(&models.FolderData{}).
+			Where("parent_folder = ? AND folder_name = ? AND belong_to = ?", folder.ParentFolder,
+				newFolderName, userId).Count(&count).Error; err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+		if count > 0 {
+			return errors.New("RenameFolderAndUpdatePath: 重命名的文件夹已存在")
+		}
+
+		// 更新文件夹的 FolderName
+		folder.FolderName = newFolderName
+
+		// 创建新的 Path
+		oldPath := folder.Path
+		newPath := path.Join(path.Dir(oldPath), newFolderName)
+		log.Println("oldPath: ", oldPath)
+		log.Println("newPath: ", newPath)
+
+		// 在服务器更新 Path
+		if err := updateFolderPath(oldPath, newPath); err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 数据库中更新当前文件夹的 Path
+		folder.Path = newPath
+		if err := tx.Save(&folder).Error; err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 更新所有子文件夹的路径
+		if err := updateChildFolderPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 更新所有子文件的路径
+
+		// 将文件夹数据插入到回收站表 Bin
 		bin := models.Bin{
 			Type:        models.FOLDER,
 			DeletedTime: delTime,
@@ -176,4 +220,116 @@ func getFolderBinDataByBinId(binId uint) (models.FolderBin, error) {
 		return folderBin, err
 	}
 	return folderBin, nil
+}
+
+func IsFolderInBin(userId, binId uint) bool {
+	return models.DataBase.Where("user_id = ? AND id = ?", userId, binId).First(&models.Bin{}).Error == nil
+}
+
+// getFolderDataByBinId 根据 userId，binId 获取已经软删除的 folderData
+func getFolderDataByBinId(userId, binId uint) (models.FolderData, error) {
+	folderBin, err := getFolderBinDataByBinId(binId)
+	if err != nil {
+		return models.FolderData{}, err
+	}
+
+	var folder models.FolderData
+	if err := models.DataBase.Unscoped().First(&folder, "id = ? AND belong_to = ?", folderBin.FolderID,
+		userId).Error; err != nil {
+		return models.FolderData{}, err
+	}
+	return folder, nil
+}
+
+func CheckBinFolderAndFolder(userId, binId uint) bool {
+	binFolderData, err := getFolderDataByBinId(userId, binId)
+	if err != nil {
+		return false
+	}
+
+	binFolderOriginName, _ := SplitBinTimestamp(binFolderData.FolderName)
+	var folderData models.FolderData
+	if err := models.DataBase.Where("belong_to = ? AND folder_name = ? AND parent_folder = ?", userId,
+		binFolderOriginName, binFolderData.ParentFolder).First(&folderData).Error; err != nil {
+		return false
+	}
+
+	return true
+}
+
+func RecoverBinFolder(userId, binId uint) error {
+	return models.DataBase.Transaction(func(tx *gorm.DB) error {
+		folder, err := getFolderDataByBinId(userId, binId)
+		if err != nil {
+			return err
+		}
+
+		if err := tx.Unscoped().Model(&folder).Update("deleted_at", nil).Error; err != nil {
+			return err
+		}
+
+		// 恢复文件夹的子文件夹
+		var subFolders []models.FolderData
+		if err := tx.Unscoped().Where("path LIKE ? AND belong_to = ?", strings.ReplaceAll(
+			strings.TrimSpace(folder.Path), "\\", "/")+"/%", userId).Find(&subFolders).Error; err != nil {
+			return err
+		}
+		for _, subFolder := range subFolders {
+			if err := tx.Unscoped().Model(&subFolder).Update("deleted_at", nil).Error; err != nil {
+				return err
+			}
+		}
+
+		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
+		newFolderName, _ := SplitBinTimestamp(folder.FolderName)
+
+		// 检查同一文件夹下是否存在同名的子文件夹
+		var count int64
+		if err := tx.Model(&models.FolderData{}).
+			Where("parent_folder = ? AND folder_name = ? AND belong_to = ?", folder.ParentFolder,
+				newFolderName, userId).Count(&count).Error; err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+		if count > 0 {
+			return errors.New("RenameFolderAndUpdatePath: 重命名的文件夹已存在")
+		}
+
+		// 更新文件夹的 FolderName
+		folder.FolderName = newFolderName
+
+		// 创建新的 Path
+		oldPath := folder.Path
+		newPath := path.Join(path.Dir(oldPath), newFolderName)
+
+		// 在服务器更新 Path
+		if err := updateFolderPath(oldPath, newPath); err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 数据库中更新当前文件夹的 Path
+		folder.Path = newPath
+		if err := tx.Save(&folder).Error; err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 更新所有子文件夹的路径
+		if err := updateChildFolderPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
+
+		// 更新所有子文件的路径
+
+		// 从 bins 和 folder_bins 表中删除相应记录
+		// 删除 bins 表中的记录
+		var bin models.Bin
+		if err := tx.Where("id = ?", binId).First(&bin).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&bin).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

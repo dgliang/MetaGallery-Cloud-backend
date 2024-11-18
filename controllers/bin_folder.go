@@ -154,3 +154,45 @@ func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson 
 	}
 	return folderBinJson
 }
+
+type recoverFolderRequest struct {
+	Account string `json:"account" binding:"required"`
+	BinId   uint   `json:"bin_id" binding:"required"`
+}
+
+func (b BinController) RecoverBinFolder(c *gin.Context) {
+	var req recoverFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "RecoverBinFolder: "+err.Error())
+		return
+	}
+
+	userId, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID: "+err.Error())
+		return
+	}
+	if userId == 0 {
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", req.Account))
+		return
+	}
+
+	// 先检查文件夹是否在回收站中
+	if !services.IsFolderInBin(userId, req.BinId) {
+		ReturnError(c, "FAILED", fmt.Sprintf("文件夹 %v 不在回收站中", req.BinId))
+		return
+	}
+
+	// 检查恢复的文件夹会不会与现有文件夹产生冲突
+	if services.CheckBinFolderAndFolder(userId, req.BinId) {
+		ReturnError(c, "FAILED", fmt.Sprintf("恢复文件夹 %v 会导致冲突", req.BinId))
+		return
+	}
+
+	// 恢复文件夹
+	if err := services.RecoverBinFolder(userId, req.BinId); err != nil {
+		ReturnServerError(c, "RecoverBinFolder: "+err.Error())
+		return
+	}
+	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("恢复文件夹 %v 成功", req.BinId))
+}
