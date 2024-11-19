@@ -5,7 +5,6 @@ import (
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -74,31 +73,12 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintPID := uint(PID)
 
-	path, err := models.GenerateFilePath(userID, uintPID, fileName)
-	if err != nil {
-		fmt.Println("文件路径生成失败:", err)
-		ReturnServerError(c, "文件路径生成失败")
-		return
-	}
 	//在本地创建文件
-
-	out, err := os.Create("resources/files" + path)
-	log.Printf("resources/files" + path)
-	if err != nil {
-		log.Printf("from %s 创建文件失败\n", c.Request.Host)
-		ReturnServerError(c, "服务器创建文件失败")
+	saveFileError := services.SaveFile(userID, uintPID, fileName, file)
+	if saveFileError != nil {
+		ReturnServerError(c, saveFileError.Error())
 		return
 	}
-	defer out.Close()
-
-	// 将上传的文件内容写入到本地文件
-	_, err = out.ReadFrom(file)
-	if err != nil {
-		log.Printf("from %s 写入保存文件失败\n", c.Request.Host)
-		ReturnServerError(c, "服务器写入保存文件失败")
-		return
-	}
-
 	newfile, err := models.CreateFileData(userID, fileName, uintPID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
@@ -116,7 +96,7 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 		IsDeleted:  newfile.InBin,
 	}
 
-	ReturnSuccess(c, "SUCCESS", "", fileRes)
+	ReturnSuccess(c, "SUCCESS", "上传文件成功", fileRes)
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
@@ -158,30 +138,38 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 		return
 	}
 
-	ReturnSuccess(c, "SUCCESS", "", FileBriefJson{})
+	ReturnSuccess(c, "SUCCESS", "重命名文件成功", nil)
 }
 
-type getFilesJson struct {
-	Account  string `json:"account" binding:"required"`
-	FolderID uint   `json:"folder_id" binding:"required"`
-}
+// type getFilesJson struct {
+// 	Account  string `json:"account" binding:"required"`
+// 	FolderID uint   `json:"folder_id" binding:"required"`
+// }
 
 func (receiver FileController) GetSubFiles(c *gin.Context) {
 
-	var Request getFilesJson
-	// 绑定JSON数据
-	if err := c.ShouldBindJSON(&Request); err != nil {
-		log.Printf("from %s 查询子文件提供的json绑定失败\n", c.Request.Host)
-		ReturnServerError(c, "解析 JSON Request："+err.Error())
+	account := c.Query("account")
+	folderID := c.Query("folder_id")
+	if folderID == "" {
+		log.Printf("from %s 查询子文件提供的文件夹id不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件夹id不能为空")
 		return
 	}
 
-	if Request.Account == "" {
+	if account == "" {
 		log.Printf("from %s 查询子文件提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
-	userID, err := models.GetUserID(Request.Account)
+
+	FID, err := strconv.ParseUint(folderID, 10, 0)
+	if err != nil {
+		fmt.Println("转换出错:", err)
+		return
+	}
+	// 将 uint64 转为 uint
+	uintFID := uint(FID)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -191,13 +179,7 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 		return
 	}
 
-	if Request.FolderID == 0 {
-		log.Printf("from %s 上传文件提供的文件夹信息不全\n", c.Request.Host)
-		ReturnError(c, "FAILED", "文件夹ID不能为空")
-		return
-	}
-
-	subfiles, err := models.GetSubFiles(Request.FolderID)
+	subfiles, err := models.GetSubFiles(uintFID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -206,27 +188,22 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "", subfiles)
 }
 
-type getFileDetailJson struct {
-	Account string `json:"account" binding:"required"`
-	FileID  uint   `json:"file_id" binding:"required"`
-}
+// type getFileDetailJson struct {
+// 	Account string `json:"account" binding:"required"`
+// 	FileID  uint   `json:"file_id" binding:"required"`
+// }
 
 func (receiver FileController) GetFileData(c *gin.Context) {
 
-	var Request getFileDetailJson
-	// 绑定JSON数据
-	if err := c.ShouldBindJSON(&Request); err != nil {
-		log.Printf("from %s 查询子文件提供的json绑定失败\n", c.Request.Host)
-		ReturnServerError(c, "解析 JSON Request："+err.Error())
-		return
-	}
+	account := c.Query("account")
+	fileID := c.Query("file_id")
 
-	if Request.Account == "" {
+	if account == "" {
 		log.Printf("from %s 查询子文件提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
-	userID, err := models.GetUserID(Request.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -236,19 +213,26 @@ func (receiver FileController) GetFileData(c *gin.Context) {
 		return
 	}
 
-	if Request.FileID == 0 {
-		log.Printf("from %s 上传文件提供的文件夹信息不全\n", c.Request.Host)
-		ReturnError(c, "FAILED", "文件夹ID不能为空")
+	if fileID == "" {
+		log.Printf("from %s 查询子文件提供的文件夹信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
 		return
 	}
 
-	fileData, err := models.GetFileData(Request.FileID)
+	FID, err := strconv.ParseUint(fileID, 10, 0)
+	if err != nil {
+		fmt.Println("转换出错:", err)
+		return
+	}
+	uintFID := uint(FID)
+
+	fileData, err := models.GetFileData(uintFID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
 	}
 
-	ReturnSuccess(c, "SUCCESS", "", fileData)
+	ReturnSuccess(c, "SUCCESS", "获取文件详细信息成功", fileData)
 }
 
 type favoriteFileRequest struct {
@@ -296,7 +280,7 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 		return
 	}
 
-	// 更新文件夹的收藏状态
+	// 更新文件的收藏状态
 	if favoriteStatus {
 		models.SetFileFavorite(req.FileId)
 	} else {
@@ -305,4 +289,109 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
 		req.Account, req.FileId, favoriteStatus))
+}
+
+type deleteOrRecoverFilejson struct {
+	Account string `json:"account" binding:"required"`
+	Fileid  uint   `json:"file_id" binding:"required"`
+}
+
+func (receiver FileController) RemoveFile(c *gin.Context) {
+
+	var req deleteOrRecoverFilejson
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供的信息有误"+err.Error())
+		return
+	}
+
+	if req.Account == "" {
+		log.Printf("from %s 将文件移入回收站提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	if req.Fileid == 0 {
+		log.Printf("from %s 将文件移入回收提供的文件信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
+		return
+	}
+
+	userID, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	if err := models.RemoveFile(req.Fileid); err != nil {
+		ReturnError(c, "FAILED", err.Error())
+	}
+
+	ReturnSuccess(c, "SUCCESS", "文件移入回收站成功", nil)
+}
+
+func (receiver FileController) GetBinFiles(c *gin.Context) {
+	account := c.Query("account")
+
+	if account == "" {
+		log.Printf("from %s 查询已回收文件提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	binFiles, err := models.GetBinFiles(userID)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "该账户已回收以下文件", binFiles)
+}
+
+func (receiver FileController) RecoverFile(c *gin.Context) {
+	var req deleteOrRecoverFilejson
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供的信息有误"+err.Error())
+		return
+	}
+
+	if req.Account == "" {
+		log.Printf("from %s 将文件移出回收站提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	if req.Fileid == 0 {
+		log.Printf("from %s 将文件移出回收提供的文件信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
+		return
+	}
+
+	userID, err := models.GetUserID(req.Account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	if err := models.RecoverFile(req.Fileid); err != nil {
+		ReturnError(c, "FAILED", err.Error())
+	}
+	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
 }

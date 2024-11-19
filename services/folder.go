@@ -158,6 +158,9 @@ func RenameFolderAndUpdatePath(userId, folderId uint, newFolderName string) erro
 
 		// 更新所有子文件的路径
 
+		if err := updateSubFilesPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("RenameFolderAndUpdatePath: %w", err)
+		}
 		return nil
 	})
 }
@@ -223,7 +226,7 @@ func SetFolderFavorite(userID, folderID uint, isFavorite bool) error {
 		}
 
 		// 更新所有子文件的 Favorite
-
+		// todo
 		return nil
 	})
 }

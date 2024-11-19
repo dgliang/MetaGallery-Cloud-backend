@@ -9,17 +9,17 @@ import (
 
 type FileData struct {
 	ID             uint `gorm:"primaryKey;index;not null;"`
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      gorm.DeletedAt `gorm:"index"`
 	BelongTo       uint
-	FileName       string `gorm:"type:varchar(255); not null;"`
-	FileType       string `gorm:"type:varchar(63); not null;"`
+	FileName       string `gorm:"type:varchar(256); not null;"`
+	FileType       string `gorm:"type:varchar(64); not null;"`
 	ParentFolderID uint
 	Path           string
 	Favorite       bool `gorm:"index"`
 	Share          bool
 	IPFSInfomation string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      gorm.DeletedAt `gorm:"index"`
 	InBin          bool
 	BinDate        time.Time
 
@@ -34,7 +34,7 @@ type FileBrief struct {
 	FileType string
 	Favorite bool
 	Share    bool
-	InBin    bool
+	InBin    time.Time
 }
 
 func init() {
@@ -204,7 +204,7 @@ func GetSubFiles(parentFolderID uint) ([]FileBrief, error) {
 			FileType: source.FileType,
 			Favorite: source.Favorite,
 			Share:    source.Share,
-			InBin:    source.InBin,
+			InBin:    source.DeletedAt.Time,
 		}
 		fileBriefs = append(fileBriefs, destination)
 	}
@@ -223,4 +223,36 @@ func CancelFileFavorite(fileID uint) {
 	DataBase.Model(&FileData{}).Where("id = ?", fileID).Find(&file)
 	file.Favorite = false
 	DataBase.Save(&file)
+}
+
+func RemoveFile(fileID uint) error {
+	err := DataBase.Model(&FileData{}).Delete(&FileData{ID: fileID}).Error
+	return err
+}
+
+func GetBinFiles(userID uint) ([]FileBrief, error) {
+	var binFiles []FileData
+
+	DataBase.Set("gorm:auto_preload", false).Model(&FileData{}).Unscoped().Where("belong_to = ? and deleted_at IS NOT NULL", userID).Find(&binFiles)
+
+	var fileBriefs []FileBrief
+
+	for _, source := range binFiles {
+		destination := FileBrief{
+			ID:       source.ID,
+			FileName: source.FileName,
+			FileType: source.FileType,
+			Favorite: source.Favorite,
+			Share:    source.Share,
+			InBin:    source.DeletedAt.Time,
+		}
+		fileBriefs = append(fileBriefs, destination)
+	}
+
+	return fileBriefs, nil
+}
+
+func RecoverFile(fileID uint) error {
+	err := DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).Update("deleted_at", nil).Error
+	return err
 }
