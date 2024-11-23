@@ -212,18 +212,18 @@ func (u UerController) UpdateUserInfo(c *gin.Context) {
 	if newUsername == "" {
 		models.UpdateUserData(account, models.UserData{BriefIntro: newIntro})
 	} else {
-		NewURL, err := services.GetAvatarUrl(newUsername)
+		// NewURL, err := services.GetAvatarUrl(newUsername)
 
-		if err != nil {
-			log.Printf("from %s 提供的新用户名 %s 不合法\n", c.Request.Host, newUsername)
-			ReturnError(c, "FAILED", "用户名不合法")
-			return
-		}
+		// if err != nil {
+		// 	log.Printf("from %s 提供的新用户名 %s 不合法\n", c.Request.Host, newUsername)
+		// 	ReturnError(c, "FAILED", "用户名不合法")
+		// 	return
+		// }
 
 		models.UpdateUserData(account, models.UserData{
-			UserName:     newUsername,
-			BriefIntro:   newIntro,
-			ProfilePhoto: NewURL,
+			UserName:   newUsername,
+			BriefIntro: newIntro,
+			// ProfilePhoto: NewURL,
 		})
 	}
 	log.Printf("from %s 用户 %s 修改资料成功 \n", c.Request.Host, account)
