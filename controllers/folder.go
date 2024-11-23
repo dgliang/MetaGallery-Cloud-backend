@@ -4,8 +4,9 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type FolderController struct{}
@@ -155,17 +156,20 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
 
-type childFolderRequest struct {
-	Account  string `json:"account" binding:"required"`
-	FolderId uint   `json:"folder_id" binding:"required"`
-}
-
 func (receiver FolderController) GetChildFolders(c *gin.Context) {
-	var req childFolderRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供查看子文件夹的信息不全")
+	account := c.Query("account")
+	folderIdStr := c.Query("folder_id")
+	if account == "" || folderIdStr == "" {
+		ReturnError(c, "FAILED", "提供的 account 和 folder_id 信息不全")
 		return
+	}
+	folderId, _ := strconv.ParseUint(folderIdStr, 10, 64)
+	req := struct {
+		Account  string
+		FolderId uint
+	}{
+		Account:  account,
+		FolderId: uint(folderId),
 	}
 
 	userID, err := models.GetUserID(req.Account)
