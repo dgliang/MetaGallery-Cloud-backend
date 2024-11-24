@@ -157,24 +157,27 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 }
 
 func (receiver FolderController) GetChildFolders(c *gin.Context) {
-	account := c.Query("account")
-	folderIdStr := c.Query("folder_id")
-	if account == "" || folderIdStr == "" {
-		ReturnError(c, "FAILED", "提供的 account 和 folder_id 信息不全")
+	// 获取查询参数
+	account := c.Query("account")       // 获取 account 参数
+	folderIDStr := c.Query("folder_id") // 获取 folder_id 参数
+
+	// 校验参数是否齐全
+	if account == "" || folderIDStr == "" {
+		ReturnError(c, "FAILED", "提供查看子文件夹的信息不全")
 		return
 	}
-	folderId, _ := strconv.ParseUint(folderIdStr, 10, 64)
-	req := struct {
-		Account  string
-		FolderId uint
-	}{
-		Account:  account,
-		FolderId: uint(folderId),
+
+	// 转换 folder_id 为 uint
+	folderID, err := strconv.Atoi(folderIDStr)
+	if err != nil {
+		ReturnError(c, "FAILED", "folder_id 无效")
+		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	// 获取用户 ID
+	userID, err := models.GetUserID(account)
 	if err != nil {
-		ReturnServerError(c, "GetUserID"+err.Error())
+		ReturnServerError(c, "GetUserID: "+err.Error())
 		return
 	}
 	if userID == 0 {
@@ -182,18 +185,32 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 		return
 	}
 
-	foldersData, err := models.ListChildFolders(userID, req.FolderId)
+	// 获取子文件夹数据
+	foldersData, err := models.ListChildFolders(uint(userID), uint(folderID))
 	if err != nil {
 		ReturnServerError(c, "ListChildFolders: "+err.Error())
 		return
 	}
-	if foldersData == nil {
-		ReturnError(c, "FAILED", "folder_id 对应的文件夹不存在")
+
+	// 检查 folder_id 是否有效
+	if foldersData == nil || len(foldersData) == 0 {
+		// 判断当前 folder_id 是否是有效文件夹
+		var folder models.FolderData
+		err = models.DataBase.Where("belong_to = ? AND id = ?", uint(userID), uint(folderID)).First(&folder).Error
+		if err != nil {
+			// 数据库中找不到该文件夹，返回错误
+			ReturnError(c, "FAILED", "folder_id 对应的文件夹不存在")
+			return
+		}
+
+		// 文件夹有效，但为空，返回空列表
+		ReturnSuccess(c, "SUCCESS", "文件夹加载成功", []models.FolderData{})
 		return
 	}
 
+	// 返回成功响应，包含子文件夹数据
 	folderRes := matchFolderResJson(foldersData)
-	ReturnSuccess(c, "SUCCESS", "", folderRes)
+	ReturnSuccess(c, "SUCCESS", "文件夹加载成功", folderRes)
 }
 
 func matchFolderResJson(foldersData []models.FolderData) []FolderJson {
