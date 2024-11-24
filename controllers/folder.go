@@ -78,8 +78,8 @@ func (receiver FolderController) GetFolderInfo(c *gin.Context) {
 
 	folderIdUint64, _ := strconv.ParseUint(folderId, 10, 64)
 	folderData, err1 := models.GetFolderDataByID(uint(folderIdUint64))
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID"+err1.Error())
+	if err1 != nil || folderData.ID == 0 {
+		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}
 
@@ -104,9 +104,8 @@ type createFolderRequest struct {
 
 func (receiver FolderController) CreateFolder(c *gin.Context) {
 	var req createFolderRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "解析 JSON Request："+err.Error())
+		ReturnError(c, "FAILED", "提供的信息不全。解析 JSON Request："+err.Error())
 		return
 	}
 
@@ -115,9 +114,15 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
 	}
-
 	if userID == 0 {
 		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	// 先判断给的父文件夹是否存在
+	parentFolderData, err := models.GetFolderDataByID(req.ParentID)
+	if err != nil || parentFolderData.ID == 0 {
+		ReturnError(c, "FAILED", "父文件夹不存在")
 		return
 	}
 
@@ -185,6 +190,13 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 		return
 	}
 
+	// 判断父文件夹是否存在
+	parentFolderData, err := models.GetFolderDataByID(uint(folderID))
+	if err != nil || parentFolderData.ID == 0 {
+		ReturnError(c, "FAILED", "父文件夹不存在"+err.Error())
+		return
+	}
+
 	// 获取子文件夹数据
 	foldersData, err := models.ListChildFolders(uint(userID), uint(folderID))
 	if err != nil {
@@ -193,7 +205,7 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 	}
 
 	// 检查 folder_id 是否有效
-	if foldersData == nil || len(foldersData) == 0 {
+	if foldersData == nil {
 		// 判断当前 folder_id 是否是有效文件夹
 		var folder models.FolderData
 		err = models.DataBase.Where("belong_to = ? AND id = ?", uint(userID), uint(folderID)).First(&folder).Error
@@ -204,7 +216,7 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 		}
 
 		// 文件夹有效，但为空，返回空列表
-		ReturnSuccess(c, "SUCCESS", "文件夹加载成功", []models.FolderData{})
+		ReturnSuccess(c, "SUCCESS", "文件夹加载成功，子文件夹数目为 0 ", []models.FolderData{})
 		return
 	}
 
