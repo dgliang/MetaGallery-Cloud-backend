@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +18,16 @@ var hostUrl = ""
 func init() {
 	godotenv.Load(".env")
 	hostUrl = os.Getenv("HOST_URL")
+}
+
+func IsValidAccount(s string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9]{4,9}$`)
+	return re.MatchString(s)
+}
+
+func IsValidPassword(s string) bool {
+	re := regexp.MustCompile(`^[a-zA-Z0-9_@#$%.?]{6,}$`)
+	return re.MatchString(s)
 }
 
 func HashPassword(password string) (string, error) {

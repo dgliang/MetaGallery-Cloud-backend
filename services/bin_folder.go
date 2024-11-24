@@ -87,7 +87,7 @@ func RemoveFolder(userId, folderID uint) error {
 
 		// 再从原文件夹表中删除子文件夹（软删除）
 		parentPath := folder.Path + "/"
-		if err := removeSubfolder(tx, userId, parentPath, delTime); err != nil {
+		if err := removeSubfolder(tx, userId, parentPath); err != nil {
 			return err
 		}
 		// 最后从原文件夹表中删除（软删除）
@@ -99,7 +99,7 @@ func RemoveFolder(userId, folderID uint) error {
 	})
 }
 
-func removeSubfolder(tx *gorm.DB, userId uint, parentPath string, deleteTime time.Time) error {
+func removeSubfolder(tx *gorm.DB, userId uint, parentPath string) error {
 	fullParentPath := strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
 
 	var subFolders []models.FolderData
