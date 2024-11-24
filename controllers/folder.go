@@ -126,6 +126,12 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		return
 	}
 
+	// 判断文件夹的命名是否符合规范
+	if !services.IsValidFolderName(req.FolderName) {
+		ReturnError(c, "FAILED", "文件夹命名不符合规范")
+		return
+	}
+
 	// 判断文件夹是否已经被创建过了
 	isExist, err := services.IsExist(userID, req.ParentID, req.FolderName)
 	if err != nil {
@@ -271,8 +277,14 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 	}
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderID)
-	if folderData.ID == 0 {
+	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
+		return
+	}
+
+	// 判断文件夹的命名是否符合规范
+	if !services.IsValidFolderName(req.NewFolderName) {
+		ReturnError(c, "FAILED", "文件夹的新命名不符合规范")
 		return
 	}
 
@@ -288,6 +300,13 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 			IsShare:    folderData.Share,
 		}
 		ReturnSuccess(c, "SUCCESS", "", folderRes)
+		return
+	}
+
+	// 检查是否新文件夹名称与现有名称冲突
+	tmpId, _ := models.GetFolderId(userID, folderData.ParentFolder, req.NewFolderName)
+	if tmpId != 0 {
+		ReturnError(c, "FAILED", "重命名失败，因为新文件夹名称与现有名称冲突")
 		return
 	}
 
@@ -350,11 +369,7 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 	}
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderId)
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
-		return
-	}
-	if folderData.ID == 0 {
+	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -34,6 +35,34 @@ func GenerateRootFolder(userID uint) error {
 		return err
 	}
 	return nil
+}
+
+func IsValidFolderName(s string) bool {
+	// 检查长度
+	if len(s) == 0 || len(s) > 255 {
+		return false
+	}
+
+	// 检查是否包含非法字符
+	illegalChars := regexp.MustCompile(`[<>:"/\\|?*]`)
+	if illegalChars.MatchString(s) {
+		return false
+	}
+
+	// 检查是否以空格或句点结尾
+	if strings.HasSuffix(s, " ") || strings.HasSuffix(s, ".") {
+		return false
+	}
+
+	// 检查是否为保留名称（不区分大小写）
+	reservedNames := map[string]bool{
+		"CON": true, "PRN": true, "AUX": true, "NUL": true,
+		"COM1": true, "COM2": true, "COM3": true, "COM4": true, "COM5": true, "COM6": true, "COM7": true, "COM8": true, "COM9": true,
+		"LPT1": true, "LPT2": true, "LPT3": true, "LPT4": true, "LPT5": true, "LPT6": true, "LPT7": true, "LPT8": true, "LPT9": true,
+	}
+
+	upperName := strings.ToUpper(s)
+	return !reservedNames[upperName]
 }
 
 func GenerateFolderPath(userID, parentID uint, folderName string) (string, error) {
@@ -197,6 +226,9 @@ func updateChildFolderPaths(tx *gorm.DB, userId uint, oldPath, newPath string) e
 func updateFolderPath(oldPath, newPath string) error {
 	oldFullPath := path.Join(FileDirPath, oldPath)
 	newFullPath := path.Join(FileDirPath, newPath)
+
+	log.Println("服务器旧路径：" + oldFullPath)
+	log.Println("服务器新地址：" + newFullPath)
 
 	err := os.Rename(oldFullPath, newFullPath)
 	return err
