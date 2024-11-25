@@ -31,14 +31,11 @@ func (b BinController) RemoveFolder(c *gin.Context) {
 	}
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderId)
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
-		return
-	}
-	if folderData.ParentFolder == 0 {
+	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "要删除的文件不存在")
 		return
 	}
+
 	if userId != folderData.BelongTo {
 		ReturnError(c, "FAILED", "仅允许删除当前用户的文件夹")
 		return
@@ -75,17 +72,22 @@ func (b BinController) DeleteFolder(c *gin.Context) {
 		return
 	}
 
+	// 检查 bins 中是否有该记录
+	if !services.IsFolderInBin(userId, req.BinId) {
+		ReturnError(c, "FAILED", "要删除的 bin record 不在回收站中")
+		return
+	}
+
+	// 检查 folder 文件夹是否存在
 	folderData, err1 := models.GetBinFolderDataByID(req.FolderId)
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
+	if err1 != nil || folderData.ID == 0 {
+		ReturnError(c, "FAILED", "要删除的文件夹不存在或已经被删除")
 		return
 	}
-	if folderData.ParentFolder == 0 {
-		ReturnError(c, "FAILED", "要删除的文件不存在")
-		return
-	}
-	if userId != folderData.BelongTo {
-		ReturnError(c, "FAILED", "仅允许删除当前用户的文件夹")
+
+	// 检查 folder、 bins 和 user 的记录是否能对应上
+	if !services.CheckFolderBinAndUserRel(userId, req.FolderId, req.BinId) {
+		ReturnError(c, "FAILED", "要删除的回收站记录，文件夹和用户对应不上")
 		return
 	}
 
@@ -179,7 +181,7 @@ func (b BinController) RecoverBinFolder(c *gin.Context) {
 
 	// 先检查文件夹是否在回收站中
 	if !services.IsFolderInBin(userId, req.BinId) {
-		ReturnError(c, "FAILED", fmt.Sprintf("文件夹 %v 不在回收站中", req.BinId))
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不在回收站中", req.BinId))
 		return
 	}
 

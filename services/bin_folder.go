@@ -241,6 +241,30 @@ func getFolderDataByBinId(userId, binId uint) (models.FolderData, error) {
 	return folder, nil
 }
 
+// 检查 folder，bin 和 user 的所属对应关系
+func CheckFolderBinAndUserRel(userId, folderId, binId uint) bool {
+	folderData, err := models.GetBinFolderDataByID(folderId)
+	if err != nil {
+		return false
+	}
+
+	var binRecord models.Bin
+	err = models.DataBase.Where("id = ?", binId).First(&binRecord).Error
+	if err != nil {
+		return false
+	}
+
+	var folderBin models.FolderBin
+	err = models.DataBase.Where("folder_id = ? AND bin_id = ?", folderId, binId).First(&folderBin).Error
+	if err != nil {
+		return false
+	}
+
+	return folderData.BelongTo == userId && binRecord.UserID == userId &&
+		folderBin.FolderID == folderId && folderBin.BinID == binId
+}
+
+// 检查恢复的文件夹会不会与现有文件夹产生冲突
 func CheckBinFolderAndFolder(userId, binId uint) bool {
 	binFolderData, err := getFolderDataByBinId(userId, binId)
 	if err != nil {
