@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -92,5 +93,41 @@ func UploadFileToPinata(filePath string) (string, error) {
 		return ipfsHash.(string), nil
 	} else {
 		return "", fmt.Errorf("无法从响应中获取 IPFS 哈希")
+	}
+}
+
+func CreateGroup(groupName string) (string, error) {
+	url := "https://api.pinata.cloud/groups"
+
+	payload := strings.NewReader(fmt.Sprintf("{\n  \"name\": \"%s\"\n}", groupName))
+
+	req, _ := http.NewRequest("POST", url, payload)
+
+	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Content-Type", "application/json")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+
+	log.Println(res)
+	log.Println(string(body))
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("创建 Pinata 群组失败，unexpected status code: %d", res.StatusCode)
+	}
+
+	// 解析 JSON 响应
+	var response map[string]interface{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		return "", err
+	}
+
+	if groupId, ok := response["id"]; ok {
+		return groupId.(string), nil
+	} else {
+		return "", fmt.Errorf("无法从响应中获取群组 ID")
 	}
 }

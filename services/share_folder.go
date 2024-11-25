@@ -28,6 +28,7 @@ func SetFolderShareState(userId, folderId uint, shareState bool) error {
 	// 	return fmt.Errorf("SetFolderShareState: upload file: %w", err)
 	// }
 	// log.Println(ipfsHash)
+	CreateGroup("")
 
 	return nil
 }
