@@ -15,7 +15,7 @@ type JsonStruct struct {
 
 func ReturnSuccess(c *gin.Context, status string, msg string, data ...interface{}) {
 	json := &JsonStruct{Code: http.StatusOK, Status: status, Msg: msg}
-	if data != nil && len(data) > 0 {
+	if len(data) > 0 {
 		json.Data = data[0]
 	}
 

@@ -4,8 +4,9 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type FolderController struct{}
@@ -77,8 +78,8 @@ func (receiver FolderController) GetFolderInfo(c *gin.Context) {
 
 	folderIdUint64, _ := strconv.ParseUint(folderId, 10, 64)
 	folderData, err1 := models.GetFolderDataByID(uint(folderIdUint64))
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID"+err1.Error())
+	if err1 != nil || folderData.ID == 0 {
+		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}
 
@@ -103,9 +104,8 @@ type createFolderRequest struct {
 
 func (receiver FolderController) CreateFolder(c *gin.Context) {
 	var req createFolderRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "解析 JSON Request："+err.Error())
+		ReturnError(c, "FAILED", "提供的信息不全。解析 JSON Request："+err.Error())
 		return
 	}
 
@@ -114,9 +114,21 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
 	}
-
 	if userID == 0 {
 		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	// 先判断给的父文件夹是否存在
+	parentFolderData, err := models.GetFolderDataByID(req.ParentID)
+	if err != nil || parentFolderData.ID == 0 {
+		ReturnError(c, "FAILED", "父文件夹不存在")
+		return
+	}
+
+	// 判断文件夹的命名是否符合规范
+	if !services.IsValidFolderName(req.FolderName) {
+		ReturnError(c, "FAILED", "文件夹命名不符合规范")
 		return
 	}
 
@@ -155,22 +167,28 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
 
-type childFolderRequest struct {
-	Account  string `json:"account" binding:"required"`
-	FolderId uint   `json:"folder_id" binding:"required"`
-}
-
 func (receiver FolderController) GetChildFolders(c *gin.Context) {
-	var req childFolderRequest
+	// 获取查询参数
+	account := c.Query("account")       // 获取 account 参数
+	folderIDStr := c.Query("folder_id") // 获取 folder_id 参数
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// 校验参数是否齐全
+	if account == "" || folderIDStr == "" {
 		ReturnError(c, "FAILED", "提供查看子文件夹的信息不全")
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	// 转换 folder_id 为 uint
+	folderID, err := strconv.Atoi(folderIDStr)
 	if err != nil {
-		ReturnServerError(c, "GetUserID"+err.Error())
+		ReturnError(c, "FAILED", "folder_id 无效")
+		return
+	}
+
+	// 获取用户 ID
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "GetUserID: "+err.Error())
 		return
 	}
 	if userID == 0 {
@@ -178,18 +196,39 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 		return
 	}
 
-	foldersData, err := models.ListChildFolders(userID, req.FolderId)
+	// 判断父文件夹是否存在
+	parentFolderData, err := models.GetFolderDataByID(uint(folderID))
+	if err != nil || parentFolderData.ID == 0 {
+		ReturnError(c, "FAILED", "父文件夹不存在"+err.Error())
+		return
+	}
+
+	// 获取子文件夹数据
+	foldersData, err := models.ListChildFolders(uint(userID), uint(folderID))
 	if err != nil {
 		ReturnServerError(c, "ListChildFolders: "+err.Error())
 		return
 	}
+
+	// 检查 folder_id 是否有效
 	if foldersData == nil {
-		ReturnError(c, "FAILED", "folder_id 对应的文件夹不存在")
+		// 判断当前 folder_id 是否是有效文件夹
+		var folder models.FolderData
+		err = models.DataBase.Where("belong_to = ? AND id = ?", uint(userID), uint(folderID)).First(&folder).Error
+		if err != nil {
+			// 数据库中找不到该文件夹，返回错误
+			ReturnError(c, "FAILED", "folder_id 对应的文件夹不存在")
+			return
+		}
+
+		// 文件夹有效，但为空，返回空列表
+		ReturnSuccess(c, "SUCCESS", "文件夹加载成功，子文件夹数目为 0 ", []models.FolderData{})
 		return
 	}
 
+	// 返回成功响应，包含子文件夹数据
 	folderRes := matchFolderResJson(foldersData)
-	ReturnSuccess(c, "SUCCESS", "", folderRes)
+	ReturnSuccess(c, "SUCCESS", "文件夹加载成功", folderRes)
 }
 
 func matchFolderResJson(foldersData []models.FolderData) []FolderJson {
@@ -238,8 +277,14 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 	}
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderID)
-	if folderData.ID == 0 {
+	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
+		return
+	}
+
+	// 判断文件夹的命名是否符合规范
+	if !services.IsValidFolderName(req.NewFolderName) {
+		ReturnError(c, "FAILED", "文件夹的新命名不符合规范")
 		return
 	}
 
@@ -255,6 +300,13 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 			IsShare:    folderData.Share,
 		}
 		ReturnSuccess(c, "SUCCESS", "", folderRes)
+		return
+	}
+
+	// 检查是否新文件夹名称与现有名称冲突
+	tmpId, _ := models.GetFolderId(userID, folderData.ParentFolder, req.NewFolderName)
+	if tmpId != 0 {
+		ReturnError(c, "FAILED", "重命名失败，因为新文件夹名称与现有名称冲突")
 		return
 	}
 
@@ -317,11 +369,7 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 	}
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderId)
-	if err1 != nil {
-		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
-		return
-	}
-	if folderData.ID == 0 {
+	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}

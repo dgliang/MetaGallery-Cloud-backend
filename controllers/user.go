@@ -21,6 +21,17 @@ func (u UerController) Register(c *gin.Context) {
 		return
 	}
 
+	// 如果账号 account 不符合规范
+	if !services.IsValidAccount(account) {
+		ReturnError(c, "FAILED", "账号 account 不符合规范")
+		return
+	}
+	// // 如果密码 password 不符合规范
+	// if !services.IsValidPassword(password) {
+	// 	ReturnError(c, "FAILED", "密码 password 不符合规范")
+	// 	return
+	// }
+
 	if password != confirmPassword {
 		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
 		ReturnError(c, "FAILED", "提供的密码与确认密码不相同")
@@ -98,7 +109,7 @@ func (u UerController) Login(c *gin.Context) {
 	}
 
 	// 验证密码
-	if invalid := services.VerifyPassword(userPd, password); invalid == false {
+	if invalid := services.VerifyPassword(userPd, password); !invalid {
 		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
 		ReturnError(c, "FAILED", "密码错误")
 		return
@@ -169,20 +180,26 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 		return
 	}
 
-	if invalid := services.VerifyPassword(userPd, oldPassword); invalid == false {
+	if invalid := services.VerifyPassword(userPd, oldPassword); !invalid {
 		log.Printf("from %s %s 密码错误\n", c.Request.Host, account)
 		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
 		return
 	}
 
-	if oldPassword == newPassword {
-		ReturnError(c, "FAILED", "新密码与旧密码相同，无需修改")
-		return
-	}
+	// // 如果新密码 newPassword 不符合规范
+	// if !services.IsValidPassword(newPassword) {
+	// 	ReturnError(c, "FAILED", "新密码不符合规范")
+	// 	return
+	// }
 
 	if newPassword != confirmPassword {
 		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
 		ReturnError(c, "FAILED", "提供的密码与确认密码不相同")
+		return
+	}
+
+	if oldPassword == newPassword {
+		ReturnError(c, "FAILED", "新密码与旧密码相同，无需修改")
 		return
 	}
 
@@ -203,6 +220,16 @@ func (u UerController) UpdateUserInfo(c *gin.Context) {
 	newUsername := c.DefaultPostForm("name", "")
 	newIntro := c.DefaultPostForm("info", "")
 
+	userId, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "UpdateUserInfo: "+err.Error())
+		return
+	}
+	if userId == 0 {
+		ReturnError(c, "FAILED", "用户不存在")
+		return
+	}
+
 	if newUsername == "" && newIntro == "" {
 		log.Printf("from %s 修改用户信息未提供新用户名\n", c.Request.Host)
 		ReturnError(c, "FAILED", "提供的账号、原密码不全")
@@ -212,18 +239,9 @@ func (u UerController) UpdateUserInfo(c *gin.Context) {
 	if newUsername == "" {
 		models.UpdateUserData(account, models.UserData{BriefIntro: newIntro})
 	} else {
-		// NewURL, err := services.GetAvatarUrl(newUsername)
-
-		// if err != nil {
-		// 	log.Printf("from %s 提供的新用户名 %s 不合法\n", c.Request.Host, newUsername)
-		// 	ReturnError(c, "FAILED", "用户名不合法")
-		// 	return
-		// }
-
 		models.UpdateUserData(account, models.UserData{
 			UserName:   newUsername,
 			BriefIntro: newIntro,
-			// ProfilePhoto: NewURL,
 		})
 	}
 	log.Printf("from %s 用户 %s 修改资料成功 \n", c.Request.Host, account)

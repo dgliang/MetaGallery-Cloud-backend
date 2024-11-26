@@ -44,7 +44,7 @@ func RemoveFolder(userId, folderID uint) error {
 		}
 
 		// 再从原文件夹表中删除子文件夹（软删除）
-		if err := removeSubfolder(tx, userId, parentPath, delTime); err != nil {
+		if err := removeSubfolder(tx, userId, parentPath, ); err != nil {
 			return err
 		}
 		// 最后从原文件夹表中删除（软删除）
