@@ -3,6 +3,7 @@ package routes
 import (
 	"MetaGallery-Cloud-backend/controllers"
 	"MetaGallery-Cloud-backend/middlewares"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,5 +41,6 @@ func Router(r *gin.Engine) {
 		api.DELETE("/removeFile", controllers.FileController{}.RemoveFile)
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
+		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
 	}
 }

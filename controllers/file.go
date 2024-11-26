@@ -21,8 +21,8 @@ type FileBriefJson struct {
 	IsFavorite bool   `json:"is_favorite"`
 	IsShare    bool   `json:"is_share"`
 	IPFSHash   string `json:"ipfs_hash"`
-	IsDeleted  bool   `json:"is_deleted"`
-	DeleteTime string `json:"delete_time"`
+	Deleted    string `json:"is_deleted"`
+	// DeleteTime Time.time `json:"delete_time"`
 }
 
 func (receiver FileController) UploadFile(c *gin.Context) {
@@ -56,15 +56,6 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 		return
 	}
 
-	//读取文件内容
-	file, _, err := c.Request.FormFile("file")
-	if err != nil {
-		log.Printf("from %s 接收文件失败\n", c.Request.Host)
-		ReturnError(c, "FAILED", "接受文件失败")
-		return
-	}
-	defer file.Close()
-
 	PID, err := strconv.ParseUint(parentFolderID, 10, 0) // 10是进制，0是自动推断结果位数
 	if err != nil {
 		fmt.Println("转换出错:", err)
@@ -73,30 +64,114 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintPID := uint(PID)
 
-	//在本地创建文件
-	saveFileError := services.SaveFile(userID, uintPID, fileName, file)
-	if saveFileError != nil {
-		ReturnServerError(c, saveFileError.Error())
+	if services.FileExist(userID, uintPID, fileName) {
+		ReturnError(c, "FAILED", "文件夹下文件重名")
 		return
 	}
-	newfile, err := models.CreateFileData(userID, fileName, uintPID)
+
+	//读取文件内容
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		log.Printf("from %s 接收文件失败\n", c.Request.Host)
+		ReturnError(c, "FAILED", "接收文件失败")
+		return
+	}
+	defer file.Close()
+
+	fileType, err := services.DetectFileType(file)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
 	}
 
-	fileRes := FileBriefJson{
-		ID:         newfile.ID,
-		User:       newfile.BelongTo,
-		FileName:   newfile.FileName,
-		ParentID:   newfile.ParentFolderID,
-		Path:       newfile.Path,
-		IsFavorite: newfile.Favorite,
-		IsShare:    newfile.Share,
-		IsDeleted:  newfile.InBin,
+	// //在本地创建文件
+	// saveFileError := services.SaveFile(userID, uintPID, fileName, file)
+	// if saveFileError != nil {
+	// 	ReturnServerError(c, saveFileError.Error())
+	// 	return
+	// }
+	// newfile, err := models.CreateFileData(userID, fileName, uintPID)
+	// if err != nil {
+	// 	ReturnServerError(c, err.Error())
+	// 	return
+	// }
+
+	// newfile, err := models.CreateFileData(userID, fileName, uintPID)
+	// if err != nil {
+	// 	ReturnServerError(c, err.Error())
+	// 	return
+	// }
+
+	newfile, err := models.CreateFileData2(userID, fileName, uintPID, fileType)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+
+	//在本地创建文件
+	saveFileError := services.SaveFile2(userID, uintPID, newfile.ID, file)
+	if saveFileError != nil {
+		ReturnServerError(c, saveFileError.Error())
+		models.UnscopedDeleteFileData(newfile.ID)
+		return
+	}
+
+	fileRes := models.FileBrief{
+		ID:       newfile.ID,
+		FileName: newfile.FileName,
+		FileType: newfile.FileType,
+		Favorite: newfile.Favorite,
+		Share:    newfile.Share,
+		InBin:    newfile.DeletedAt.Time,
 	}
 
 	ReturnSuccess(c, "SUCCESS", "上传文件成功", fileRes)
+}
+
+func (receiver FileController) DownloadFile(c *gin.Context) {
+	account := c.Query("account")
+	fileID := c.Query("file_id")
+
+	if account == "" {
+		log.Printf("from %s 上传文件提供的信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "上传者账号不能为空")
+		return
+	}
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	if fileID == "" {
+		log.Printf("from %s 查询子文件提供的文件夹信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
+		return
+	}
+
+	FID, err := strconv.ParseUint(fileID, 10, 0)
+	if err != nil {
+		fmt.Println("转换出错:", err)
+		return
+	}
+	uintFID := uint(FID)
+
+	fileData, err := models.GetFileData(uintFID)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+	if fileData.ID == 0 {
+		ReturnError(c, "FAILED", "文件不存在")
+		return
+	}
+
+	services.DownloadFile(c, userID, uintFID)
+
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
@@ -133,7 +208,12 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintFID := uint(FID)
 
-	if err := services.RenameFileAndUpdatePath(userID, uintFID, newFileName); err != nil {
+	// if err := services.RenameFileAndUpdatePath(userID, uintFID, newFileName); err != nil {
+	// 	ReturnError(c, "FAILED", "重命名失败:"+err.Error())
+	// 	return
+	// }
+
+	if err := services.RenameFile(userID, uintFID, newFileName); err != nil {
 		ReturnError(c, "FAILED", "重命名失败:"+err.Error())
 		return
 	}
@@ -326,7 +406,7 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 		return
 	}
 
-	if err := models.RemoveFile(req.Fileid); err != nil {
+	if err := services.RemoveFile(req.Fileid); err != nil {
 		ReturnError(c, "FAILED", err.Error())
 	}
 
@@ -352,7 +432,7 @@ func (receiver FileController) GetBinFiles(c *gin.Context) {
 		return
 	}
 
-	binFiles, err := models.GetBinFiles(userID)
+	binFiles, err := services.GetBinFiles(userID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -390,7 +470,7 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 		return
 	}
 
-	if err := models.RecoverFile(req.Fileid); err != nil {
+	if err := services.RecoverFile(userID, req.Fileid); err != nil {
 		ReturnError(c, "FAILED", err.Error())
 	}
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)

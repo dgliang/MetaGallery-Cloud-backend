@@ -2,6 +2,8 @@ package models
 
 import (
 	"path"
+	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,8 +22,6 @@ type FileData struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`
-	InBin          bool
-	BinDate        time.Time
 
 	//外键约束
 	User         UserData   `gorm:"foreignKey:BelongTo"`
@@ -41,15 +41,11 @@ func init() {
 	DataBase.AutoMigrate(&FileData{})
 }
 
-// func GetFilePath(userID uint, fileName string, parentFolderID uint) (string, error) {
-// 	parentFloderPath, err := GetParentFolderPath(userID, parentFolderID)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	filepath := parentFloderPath + "/" + fileName
-
-// 	return filepath, nil
-// }
+func GetNextFileID() uint {
+	var nextID uint
+	DataBase.Raw("SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name = ? AND table_schema = ?", "file_data", "metagallery_cloud").Scan(&nextID)
+	return nextID
+}
 
 func GetFilePath(fileID uint) (string, error) {
 	var fileData FileData
@@ -102,58 +98,34 @@ func CreateFileData(userID uint, fileName string, parentFolderID uint) (FileData
 	return newFile, nil
 }
 
-func DeleteWithFileData(fileID uint, userID uint, fileName string, parentFolderID uint) (FileData, error) {
-	fileToDelete := FileData{
-		ID:             fileID,
-		BelongTo:       userID,
-		FileName:       fileName,
-		ParentFolderID: parentFolderID,
-	}
-
-	if err := DataBase.Delete(&fileToDelete).Error; err != nil {
-		return FileData{}, err
-	}
-
-	return fileToDelete, nil
-}
-
-func DeleteWithFileID(fileID uint) (FileData, error) {
-	fileToDelete := FileData{
-		ID: fileID,
-	}
-
-	if err := DataBase.Delete(&fileToDelete).Error; err != nil {
-		return FileData{}, err
-	}
-
-	return fileToDelete, nil
-}
-
-func DeleteWithFileName(userID uint, fileName string, parentFolderID uint) (FileData, error) {
-	fileToDelete := FileData{
-		BelongTo:       userID,
-		FileName:       fileName,
-		ParentFolderID: parentFolderID,
-	}
-
-	if err := DataBase.Delete(&fileToDelete).Error; err != nil {
-		return FileData{}, err
-	}
-
-	return fileToDelete, nil
-}
-
-func RenameFile(userID uint, oldfilename string, newFileName string, parentFolderID uint) error {
-	var originFileData FileData
-	DataBase.Model(&FileData{}).Where("belong_to = ? AND parent_folder_id = ? AND file_name = ?", userID, parentFolderID, oldfilename).First(&originFileData)
-
-	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
+func CreateFileData2(userID uint, fileName string, parentFolderID uint, fileType string) (FileData, error) {
+	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
 	if err != nil {
-		return err
+		return FileData{}, err
 	}
 
-	DataBase.Model(&FileData{}).Where("belong_to = ? AND parent_folder_id = ? AND file_name = ?", userID, parentFolderID, oldfilename).Updates(FileData{FileName: newFileName, Path: newFilePath})
-	return nil
+	newFile := FileData{
+		BelongTo:       userID,
+		FileName:       fileName,
+		FileType:       fileType,
+		ParentFolderID: parentFolderID,
+		Path:           filePath,
+	}
+
+	if err := DataBase.Create(&newFile).Error; err != nil {
+		return FileData{}, err
+	}
+	newFile.Path = strings.Replace(newFile.Path, fileName, strconv.FormatUint(uint64(newFile.ID), 10), 1)
+	if err := DataBase.Where("id = ?", newFile.ID).Updates(&newFile).Error; err != nil {
+		return FileData{}, err
+	}
+
+	return newFile, nil
+}
+
+func UnscopedDeleteFileData(fileID uint) error {
+	err := DataBase.Model(&FileData{}).Unscoped().Delete(&FileData{ID: fileID}).Error
+	return err
 }
 
 func RenameFileWithFileID(fileID uint, newFileName string) error {
@@ -171,6 +143,42 @@ func RenameFileWithFileID(fileID uint, newFileName string) error {
 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
 	return nil
 }
+func RenameFileWithFileID2(fileID uint, newFileName string) error {
+	File := FileData{
+		ID: fileID,
+	}
+	var originFileData FileData
+	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
+
+	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName})
+	return nil
+}
+func UnscopedRenameFile(fileID uint, newFileName string) error {
+	File := FileData{
+		ID: fileID,
+	}
+	var originFileData FileData
+	DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).First(&originFileData)
+
+	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
+	if err != nil {
+		return err
+	}
+
+	DataBase.Model(&File).Unscoped().Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
+	return nil
+}
+
+func UnscopedRenameFile2(fileID uint, newFileName string) error {
+	File := FileData{
+		ID: fileID,
+	}
+	var originFileData FileData
+	DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).First(&originFileData)
+
+	DataBase.Model(&File).Unscoped().Where("ID = ?", fileID).Updates(FileData{FileName: newFileName})
+	return nil
+}
 
 func GetFileID(userId, parentId uint, fileName string) (uint, error) {
 	var file FileData
@@ -185,7 +193,15 @@ func GetFileID(userId, parentId uint, fileName string) (uint, error) {
 func GetFileData(fileID uint) (FileData, error) {
 	var fileData FileData
 	// 预加载
-	DataBase.Preload("User").Preload("ParentFolder").Model(&FileData{ID: fileID}).Find(&fileData)
+	DataBase.Preload("User").Preload("ParentFolder").Model(&FileData{ID: fileID}).Where("id = ?", fileID).Find(&fileData)
+
+	return fileData, nil
+}
+
+func GetDeletedFileData(fileID uint) (FileData, error) {
+	var fileData FileData
+	// 预加载
+	DataBase.Preload("User").Preload("ParentFolder").Unscoped().Model(&FileData{ID: fileID}).Where("id = ?", fileID).Find(&fileData)
 
 	return fileData, nil
 }
