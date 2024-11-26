@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"fmt"
 	"log"
@@ -74,8 +75,8 @@ func RenameFileAndUpdatePath(userID, fileID uint, newFileName string) error {
 		return err
 	}
 	//修改本地文件名称
-	oldFullPath := path.Join(FileDirPath, oldPath)
-	newFullPath := path.Join(FileDirPath, newPath)
+	oldFullPath := path.Join(config.FileResPath, oldPath)
+	newFullPath := path.Join(config.FileResPath, newPath)
 	os.Rename(oldFullPath, newFullPath)
 	//修改数据库相关内容
 	models.RenameFileWithFileID(fileID, newFileName)

@@ -13,9 +13,9 @@ type FolderData struct {
 	FolderName      string `gorm:"type:varchar(255); not null;"`
 	ParentFolder    uint   `gorm:"default:NULL"`
 	Path            string
-	Favorite        bool `gorm:"index; default:false"`
-	Share           bool `gorm:"default:false"`
-	IPFSInformation string
+	Favorite        bool   `gorm:"index; default:false"`
+	Share           bool   `gorm:"default:false"`
+	IPFSInformation string `gorm:"column:ipfs_information"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`

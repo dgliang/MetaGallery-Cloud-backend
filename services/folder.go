@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"errors"
 	"fmt"
@@ -10,16 +11,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
-
-var FileDirPath string
-
-func init() {
-	godotenv.Load()
-	FileDirPath = os.Getenv("FILE_DIR_PATH")
-}
 
 func GenerateRootFolder(userID uint) error {
 	rootFolderName := fmt.Sprintf("%d", userID)
@@ -117,7 +110,7 @@ func IsExist(userId, parentId uint, folderName string) (bool, error) {
 }
 
 func checkAndCreateFolder(folderPath string) error {
-	fullPath := path.Join(FileDirPath, folderPath)
+	fullPath := path.Join(config.FileResPath, folderPath)
 
 	// 创建完整路径的所有父目录（如果不存在）
 	fatherPath := path.Dir(fullPath)
@@ -224,8 +217,8 @@ func updateChildFolderPaths(tx *gorm.DB, userId uint, oldPath, newPath string) e
 }
 
 func updateFolderPath(oldPath, newPath string) error {
-	oldFullPath := path.Join(FileDirPath, oldPath)
-	newFullPath := path.Join(FileDirPath, newPath)
+	oldFullPath := path.Join(config.FileResPath, oldPath)
+	newFullPath := path.Join(config.FileResPath, newPath)
 
 	log.Println("服务器旧路径：" + oldFullPath)
 	log.Println("服务器新地址：" + newFullPath)
