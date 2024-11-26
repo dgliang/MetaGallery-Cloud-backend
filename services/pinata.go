@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func UploadFileToPinata(filePath string) (string, error) {
+func UploadFileToIPFS(filePath string) (string, error) {
 	url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
 	// 对 filepath 进行预处理
@@ -96,7 +96,54 @@ func UploadFileToPinata(filePath string) (string, error) {
 	}
 }
 
-func CreateGroup(groupName string) (string, error) {
+func UploadJsonToIPFS(jsonData map[string]interface{}) (string, error) {
+	url := "https://api.pinata.cloud/pinning/pinJSONToIPFS"
+
+	payloadData := map[string]interface{}{
+		// "pinataOptions": map[string]interface{}{
+		// 	"cidVersion": 1,
+		// },
+		// "pinataMetadata": map[string]interface{}{
+		// 	"name": "pinnie.json",
+		// },
+		"pinataContent": jsonData,
+	}
+
+	// 将 payload 转为 JSON
+	payload, err := json.Marshal(payloadData)
+	if err != nil {
+		return "", fmt.Errorf("将 payload 转为 JSON: %v", err)
+	}
+
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+
+	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Content-Type", "application/json")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+
+	log.Println(res)
+	log.Println(string(body))
+
+	// 解析响应体 response
+	var response map[string]interface{}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("解析响应体 response: %v", err)
+	}
+
+	// 获取 IPFS 哈希
+	if ipfsHash, ok := response["IpfsHash"]; ok {
+		return ipfsHash.(string), nil
+	} else {
+		return "", fmt.Errorf("无法从响应中获取 IPFS 哈希")
+	}
+}
+
+func CreatePinataGroup(groupName string) (string, error) {
 	url := "https://api.pinata.cloud/groups"
 
 	payload := strings.NewReader(fmt.Sprintf("{\n  \"name\": \"%s\"\n}", groupName))
