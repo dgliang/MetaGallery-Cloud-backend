@@ -14,6 +14,7 @@ type shareFolderRequest struct {
 	Account  string `json:"account" binding:"required"`
 	FolderId uint   `json:"folder_id" binding:"required"`
 	IsShared int    `json:"is_shared" binding:"required"` // 1: not shared, 2: shared
+	Intro    string `json:"intro"`
 }
 
 func (s FolderShareController) SetFolderShared(c *gin.Context) {
@@ -44,12 +45,18 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		shareStatus = false
 	} else if req.IsShared == 2 {
 		shareStatus = true
+
+		// 判断此时 intro 是否为空
+		if req.Intro == "" {
+			ReturnError(c, "FAILED", "分享文件夹时，必须提供简介")
+			return
+		}
 	} else {
 		ReturnError(c, "FAILED", "is_shared 参数不正确，只能取值 1 或 2")
 		return
 	}
 
-	err = services.SetFolderShareState(userId, folderData.ID, shareStatus)
+	err = services.SetFolderShareState(userId, folderData.ID, shareStatus, req.Intro)
 	if err != nil {
 		ReturnServerError(c, "SetFolderShareState: "+err.Error())
 		return

@@ -9,26 +9,57 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetFolderShareState(userId, folderId uint, shareState bool) error {
-	// 1. 更新数据库的 share 字段
-	if err := setShareFolderState(userId, folderId, shareState); err != nil {
-		return fmt.Errorf("SetFolderShareState: database: %w", err)
-	}
-
-	// 2. 上传文件夹到 IPFS
+func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string) error {
 	folderData, err := models.GetFolderDataByID(folderId)
 	if err != nil {
 		return fmt.Errorf("SetFolderShareState: get folder data: %w", err)
 	}
 
-	var folderCID string
-	folderCID, err = uploadFolderToIPFS(folderData)
-	if err != nil {
-		return fmt.Errorf("SetFolderShareState: upload folder: %w", err)
+	// 如果两次的 Share 状态相同，则直接返回
+	if folderData.Share == shareState {
+		return nil
 	}
 
-	// 3. 更新数据库的 ipfs_hash 字段
-	log.Println(folderCID)
+	if shareState {
+		var introStr string
+		if len(intro) > 0 {
+			introStr = intro[0]
+		} else {
+			return fmt.Errorf("SetFolderShareState: intro is empty")
+		}
+
+		// 如果 Share 状态为 true，则将文件夹上传到 IPFS
+		// 1. 更新数据库的 share 字段
+		if err := setShareFolderState(userId, folderId, shareState); err != nil {
+			return fmt.Errorf("SetFolderShareState: database: %w", err)
+		}
+
+		// 2. 上传文件夹到 IPFS
+		var folderCID string
+		folderCID, err = uploadFolderToIPFS(folderData)
+		if err != nil {
+			return fmt.Errorf("SetFolderShareState: upload folder: %w", err)
+		}
+
+		// 3. 更新数据库，在 shared_folders 表中插入一条记录
+		log.Println(folderCID)
+		if _, err := CreateSharedFolder(userId, folderId, introStr, folderCID); err != nil {
+			return fmt.Errorf("SetFolderShareState: create shared folder: %w", err)
+		}
+	} else {
+		// 如果 Share 状态为 false，则从 IPFS 删除文件夹
+		// 1. 更新数据库的 share 字段
+		if err := setShareFolderState(userId, folderId, shareState); err != nil {
+			return fmt.Errorf("SetFolderShareState: database: %w", err)
+		}
+
+		// 2. 从 IPFS 删除文件夹
+
+		// 3. 更新数据库，在 shared_folders 表中删除对应记录
+		if err := DeleteSharedFolder(userId, folderId); err != nil {
+			return fmt.Errorf("SetFolderShareState: delete shared folder: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -144,7 +175,17 @@ func generateMetaInFolder(folderName string, files, subFolders []map[string]inte
 	return folderMeta
 }
 
-func updateFolderIPFSHash(userId, folderId uint, ipfsHash string) error {
+func CreateSharedFolder(userId, folderId uint, intro, ipfsHash string) (uint, error) {
+	sharedFolder := models.SharedFolder{
+		OwnerID:  userId,
+		FolderID: folderId,
+		Intro:    intro,
+		IPFSHash: ipfsHash,
+	}
 
-	return nil
+	return sharedFolder.ID, models.DataBase.Create(&sharedFolder).Error
+}
+
+func DeleteSharedFolder(userId, folderId uint) error {
+	return models.DataBase.Where("owner_id = ? AND folder_id = ?", userId, folderId).Delete(&models.SharedFolder{}).Error
 }

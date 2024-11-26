@@ -178,3 +178,21 @@ func CreatePinataGroup(groupName string) (string, error) {
 		return "", fmt.Errorf("无法从响应中获取群组 ID")
 	}
 }
+
+func UnpinFromIPFS(CID string) error {
+	url := "https://api.pinata.cloud/pinning/unpin/" + CID
+
+	req, _ := http.NewRequest("DELETE", url, nil)
+
+	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+
+	log.Println(res)
+	log.Println(string(body))
+
+	return nil
+}
