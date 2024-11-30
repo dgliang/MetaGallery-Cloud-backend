@@ -2,7 +2,6 @@ package routes
 
 import (
 	"MetaGallery-Cloud-backend/controllers"
-	"MetaGallery-Cloud-backend/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +15,7 @@ func Router(r *gin.Engine) {
 		api.POST("/login", controllers.UerController{}.Login)
 
 		// 除了注册登录外，其余接口都要进行 jwt 验证
-		api.Use(middlewares.TokenAuthMiddleware())
+		// api.Use(middlewares.TokenAuthMiddleware())
 
 		// 账号管理
 		api.GET("/getUserInfo", controllers.UerController{}.GetUserInfo)
