@@ -120,7 +120,10 @@ func UploadJsonToIPFS(jsonData map[string]interface{}) (string, error) {
 	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
 	req.Header.Add("Content-Type", "application/json")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -153,7 +156,10 @@ func CreatePinataGroup(groupName string) (string, error) {
 	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
 	req.Header.Add("Content-Type", "application/json")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -167,7 +173,7 @@ func CreatePinataGroup(groupName string) (string, error) {
 
 	// 解析 JSON 响应
 	var response map[string]interface{}
-	err := json.Unmarshal(body, &response)
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +192,10 @@ func UnpinFromIPFS(CID string) error {
 
 	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
