@@ -64,6 +64,7 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 	return nil
 }
 
+// 数据库中更新 folder_data 表和 file_data 表的 Share 字段
 func setShareFolderState(userId, folderId uint, shareState bool) error {
 	return models.DataBase.Transaction(func(tx *gorm.DB) error {
 		var folder models.FolderData
@@ -175,6 +176,7 @@ func generateMetaInFolder(folderName string, files, subFolders []map[string]inte
 	return folderMeta
 }
 
+// 数据库中 shared_folders 表中创建新的共享文件夹的记录
 func CreateSharedFolder(userId, folderId uint, intro, ipfsHash string) (uint, error) {
 	sharedFolder := models.SharedFolder{
 		OwnerID:  userId,
@@ -186,6 +188,7 @@ func CreateSharedFolder(userId, folderId uint, intro, ipfsHash string) (uint, er
 	return sharedFolder.ID, models.DataBase.Create(&sharedFolder).Error
 }
 
+// 数据库中 shared_folders 表中删除的共享文件夹的记录
 func DeleteSharedFolder(userId, folderId uint) error {
 	return models.DataBase.Where("owner_id = ? AND folder_id = ?", userId, folderId).Delete(&models.SharedFolder{}).Error
 }
