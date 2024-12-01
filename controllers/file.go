@@ -5,6 +5,7 @@ import (
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -84,24 +85,6 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 		return
 	}
 
-	// //在本地创建文件
-	// saveFileError := services.SaveFile(userID, uintPID, fileName, file)
-	// if saveFileError != nil {
-	// 	ReturnServerError(c, saveFileError.Error())
-	// 	return
-	// }
-	// newfile, err := models.CreateFileData(userID, fileName, uintPID)
-	// if err != nil {
-	// 	ReturnServerError(c, err.Error())
-	// 	return
-	// }
-
-	// newfile, err := models.CreateFileData(userID, fileName, uintPID)
-	// if err != nil {
-	// 	ReturnServerError(c, err.Error())
-	// 	return
-	// }
-
 	newfile, err := models.CreateFileData2(userID, fileName, uintPID, fileType)
 	if err != nil {
 		ReturnServerError(c, err.Error())
@@ -119,7 +102,7 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	fileRes := models.FileBrief{
 		ID:       newfile.ID,
 		FileName: newfile.FileName,
-		FileType: newfile.FileType,
+		FileType: filepath.Ext(newfile.FileName),
 		Favorite: newfile.Favorite,
 		Share:    newfile.Share,
 		InBin:    newfile.DeletedAt.Time,
@@ -207,11 +190,6 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 	}
 	// 将 uint64 转为 uint
 	uintFID := uint(FID)
-
-	// if err := services.RenameFileAndUpdatePath(userID, uintFID, newFileName); err != nil {
-	// 	ReturnError(c, "FAILED", "重命名失败:"+err.Error())
-	// 	return
-	// }
 
 	if err := services.RenameFile(userID, uintFID, newFileName); err != nil {
 		ReturnError(c, "FAILED", "重命名失败:"+err.Error())

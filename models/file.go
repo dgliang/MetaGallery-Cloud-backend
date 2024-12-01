@@ -41,12 +41,6 @@ func init() {
 	DataBase.AutoMigrate(&FileData{})
 }
 
-func GetNextFileID() uint {
-	var nextID uint
-	DataBase.Raw("SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name = ? AND table_schema = ?", "file_data", "metagallery_cloud").Scan(&nextID)
-	return nextID
-}
-
 func GetFilePath(fileID uint) (string, error) {
 	var fileData FileData
 	if err := DataBase.Model(&FileData{}).Where(" id = ?", fileID).Find(&fileData).Error; err != nil {
@@ -79,24 +73,24 @@ func GenerateFilePath(userID, parentFolderID uint, fileName string) (string, err
 	return filePath, nil
 }
 
-func CreateFileData(userID uint, fileName string, parentFolderID uint) (FileData, error) {
-	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
-	if err != nil {
-		return FileData{}, err
-	}
+// func CreateFileData(userID uint, fileName string, parentFolderID uint) (FileData, error) {
+// 	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
+// 	if err != nil {
+// 		return FileData{}, err
+// 	}
 
-	newFile := FileData{
-		BelongTo:       userID,
-		FileName:       fileName,
-		ParentFolderID: parentFolderID,
-		Path:           filePath,
-	}
+// 	newFile := FileData{
+// 		BelongTo:       userID,
+// 		FileName:       fileName,
+// 		ParentFolderID: parentFolderID,
+// 		Path:           filePath,
+// 	}
 
-	if err := DataBase.Create(&newFile).Error; err != nil {
-		return FileData{}, err
-	}
-	return newFile, nil
-}
+// 	if err := DataBase.Create(&newFile).Error; err != nil {
+// 		return FileData{}, err
+// 	}
+// 	return newFile, nil
+// }
 
 func CreateFileData2(userID uint, fileName string, parentFolderID uint, fileType string) (FileData, error) {
 	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
@@ -123,26 +117,28 @@ func CreateFileData2(userID uint, fileName string, parentFolderID uint, fileType
 	return newFile, nil
 }
 
-func UnscopedDeleteFileData(fileID uint) error {
-	err := DataBase.Model(&FileData{}).Unscoped().Delete(&FileData{ID: fileID}).Error
-	return err
+func UnscopedDeleteFileData(fileID uint) (FileData, error) {
+	var deletedData FileData
+	err := DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).Delete(&deletedData).Error
+	return deletedData, err
 }
 
-func RenameFileWithFileID(fileID uint, newFileName string) error {
-	File := FileData{
-		ID: fileID,
-	}
-	var originFileData FileData
-	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
+// func RenameFileWithFileID(fileID uint, newFileName string) error {
+// 	File := FileData{
+// 		ID: fileID,
+// 	}
+// 	var originFileData FileData
+// 	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
 
-	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
-	if err != nil {
-		return err
-	}
+// 	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
-	return nil
-}
+// 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
+// 	return nil
+// }
+
 func RenameFileWithFileID2(fileID uint, newFileName string) error {
 	File := FileData{
 		ID: fileID,
@@ -153,21 +149,22 @@ func RenameFileWithFileID2(fileID uint, newFileName string) error {
 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName})
 	return nil
 }
-func UnscopedRenameFile(fileID uint, newFileName string) error {
-	File := FileData{
-		ID: fileID,
-	}
-	var originFileData FileData
-	DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).First(&originFileData)
 
-	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
-	if err != nil {
-		return err
-	}
+// func UnscopedRenameFile(fileID uint, newFileName string) error {
+// 	File := FileData{
+// 		ID: fileID,
+// 	}
+// 	var originFileData FileData
+// 	DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).First(&originFileData)
 
-	DataBase.Model(&File).Unscoped().Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
-	return nil
-}
+// 	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	DataBase.Model(&File).Unscoped().Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
+// 	return nil
+// }
 
 func UnscopedRenameFile2(fileID uint, newFileName string) error {
 	File := FileData{

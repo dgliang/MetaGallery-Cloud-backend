@@ -83,10 +83,13 @@ func RemoveFolder(userId, folderID uint) error {
 			return err
 		}
 
+		parentPath := folder.Path + "/"
 		// 先软删除文件
+		if err := removeSubFiles(tx, userId, parentPath); err != nil {
+			return err
+		}
 
 		// 再从原文件夹表中删除子文件夹（软删除）
-		parentPath := folder.Path + "/"
 		if err := removeSubfolder(tx, userId, parentPath); err != nil {
 			return err
 		}

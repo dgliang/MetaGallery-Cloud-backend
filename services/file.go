@@ -120,36 +120,36 @@ func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
 	return nil
 }
 
-func RenameFileAndUpdatePath(userID, fileID uint, newFileName string) error {
+// func RenameFileAndUpdatePath(userID, fileID uint, newFileName string) error {
 
-	//获取文件的父文件夹id
-	uintPID, err := models.GetParentFolderID(fileID)
-	if err != nil {
-		return err
-	}
-	//判断是否有同名文件
-	isExist := FileExist(userID, uintPID, newFileName)
-	if isExist {
-		return fmt.Errorf("FileName already exists: %s", newFileName)
-	}
-	//获取原文件路径
-	oldPath, err := models.GetFilePath(fileID)
-	if err != nil {
-		return err
-	}
-	//生成新文件路径
-	newPath, err := models.GenerateFilePath(userID, uintPID, newFileName)
-	if err != nil {
-		return err
-	}
-	//修改本地文件名称
-	oldFullPath := path.Join(FileDirPath, oldPath)
-	newFullPath := path.Join(FileDirPath, newPath)
-	os.Rename(oldFullPath, newFullPath)
-	//修改数据库相关内容
-	models.RenameFileWithFileID(fileID, newFileName)
-	return nil
-}
+// 	//获取文件的父文件夹id
+// 	uintPID, err := models.GetParentFolderID(fileID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	//判断是否有同名文件
+// 	isExist := FileExist(userID, uintPID, newFileName)
+// 	if isExist {
+// 		return fmt.Errorf("FileName already exists: %s", newFileName)
+// 	}
+// 	//获取原文件路径
+// 	oldPath, err := models.GetFilePath(fileID)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	//生成新文件路径
+// 	newPath, err := models.GenerateFilePath(userID, uintPID, newFileName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	//修改本地文件名称
+// 	oldFullPath := path.Join(FileDirPath, oldPath)
+// 	newFullPath := path.Join(FileDirPath, newPath)
+// 	os.Rename(oldFullPath, newFullPath)
+// 	//修改数据库相关内容
+// 	models.RenameFileWithFileID(fileID, newFileName)
+// 	return nil
+// }
 
 func RenameFile(userID, fileID uint, newFileName string) error {
 
@@ -198,7 +198,7 @@ func updateSubFilesPaths(tx *gorm.DB, userId uint, oldPath, newPath string) erro
 	return nil
 }
 
-func removeSubFiles(tx *gorm.DB, userId uint, parentPath string, deleteTime time.Time) error {
+func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	// 获取所有直接子文件夹
 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
 
@@ -242,7 +242,7 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string, deleteTime time
 	return nil
 }
 
-func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string, deleteTime time.Time) error {
+func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
 
 	var subFiles []models.FileData
@@ -307,13 +307,14 @@ func RecoverFile(userID uint, fileID uint) error {
 	}
 
 	//查询原本名字是否被占用
-	count := 1
+	// count := 1
 	fileName := fileData.FileName
 	for {
 		if FileExist(userID, fileData.ParentFolderID, fileName) {
-			models.UnscopedRenameFile2(fileID, fileData.FileName+" ("+strconv.Itoa(count)+")")
-			fileName = fileData.FileName + " (" + strconv.Itoa(count) + ")"
-			count += 1
+			return fmt.Errorf("RecoverFile error: 原文件夹下已有重名文件")
+			// models.UnscopedRenameFile2(fileID, fileData.FileName+" ("+strconv.Itoa(count)+")")
+			// fileName = fileData.FileName + " (" + strconv.Itoa(count) + ")"
+			// count += 1
 		} else {
 			break
 		}
@@ -359,6 +360,38 @@ func GetBinFiles(userID uint) ([]models.FileBrief, error) {
 		fileBriefs = append(fileBriefs, fileBrief)
 	}
 	return fileBriefs, nil
+}
+
+func ReallyDeleteFile(fileID uint) error {
+	if !models.FileBinItemExist(fileID) {
+		return fmt.Errorf("RecoverFile error: fileRecycleItem do not exist")
+	}
+
+	// 删除对应文件回收项
+	fileBinItem, err := models.DeleteFileBinItem(fileID)
+	if err != nil {
+		return err
+	}
+	// 删除对应回收站项
+	if err := models.DeleteBinItem(fileBinItem.ID); err != nil {
+		return fmt.Errorf("RecoverFile error: %w", err)
+	}
+
+	deletedData, err := models.UnscopedDeleteFileData(fileID)
+	if err != nil {
+		return fmt.Errorf("RecoverFile error: %w", err)
+	}
+
+	filePath := path.Join(FileDirPath, deletedData.Path)
+
+	err2 := os.Remove(filePath)
+	if err2 != nil {
+		fmt.Println("Error deleting file:", err)
+	} else {
+		fmt.Println("File successfully deleted")
+	}
+
+	return nil
 }
 
 func DownloadFile(c *gin.Context, userID uint, fileID uint) (multipart.File, error) {
