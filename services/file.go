@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -25,35 +24,7 @@ func FileExist(userID, parentId uint, fileName string) bool {
 	return isExist != 0
 }
 
-func DetectFileType(file multipart.File) (string, error) {
-	// 创建一个缓冲区，读取文件的前512字节进行检测
-	buffer := make([]byte, 512)
-	_, err := file.Read(buffer)
-	if err != nil {
-		return "", err
-	}
 
-	// 使用http.DetectContentType来检测文件的MIME类型
-	fileType := http.DetectContentType(buffer)
-	file.Seek(0, 0)
-	return fileType, nil
-}
-
-func detectFileTypeByExtension(fileName string) string {
-	ext := filepath.Ext(fileName)
-	switch ext {
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	case ".png":
-		return "image/png"
-	case ".gif":
-		return "image/gif"
-	case ".pdf":
-		return "application/pdf"
-	default:
-		return "unknown"
-	}
-}
 
 func FileType(fileName string) string {
 	ext := filepath.Ext(fileName)

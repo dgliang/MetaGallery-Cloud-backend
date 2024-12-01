@@ -45,5 +45,7 @@ func Router(r *gin.Engine) {
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
 		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
+		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
+
 	}
 }

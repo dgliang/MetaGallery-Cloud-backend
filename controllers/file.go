@@ -79,13 +79,13 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	fileType, err := services.DetectFileType(file)
-	if err != nil {
-		ReturnServerError(c, err.Error())
-		return
-	}
+	// _, err2 := services.DetectFileType(file)
+	// if err2 != nil {
+	// 	ReturnServerError(c, err.Error())
+	// 	return
+	// }
 
-	newfile, err := models.CreateFileData2(userID, fileName, uintPID, fileType)
+	newfile, err := models.CreateFileData2(userID, fileName, uintPID, filepath.Ext(fileName))
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -257,7 +257,7 @@ func (receiver FileController) GetFileData(c *gin.Context) {
 	fileID := c.Query("file_id")
 
 	if account == "" {
-		log.Printf("from %s 查询子文件提供的账号不全\n", c.Request.Host)
+		log.Printf("from %s 查询文件提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
@@ -287,6 +287,10 @@ func (receiver FileController) GetFileData(c *gin.Context) {
 	fileData, err := models.GetFileData(uintFID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
+		return
+	}
+	if fileData.ID == 0 {
+		ReturnError(c, "FAILED", "ID不存在")
 		return
 	}
 
@@ -452,4 +456,44 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 		ReturnError(c, "FAILED", err.Error())
 	}
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
+}
+
+func (receiver FileController) PreviewFile(c *gin.Context) {
+	account := c.Query("account")
+	fileID := c.Query("file_id")
+
+	if account == "" {
+		log.Printf("from %s 上传文件提供的信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "上传者账号不能为空")
+		return
+	}
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	if fileID == "" {
+		log.Printf("from %s 查询子文件提供的文件夹信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
+		return
+	}
+
+	FID, err := strconv.ParseUint(fileID, 10, 0)
+	if err != nil {
+		fmt.Println("转换出错:", err)
+		return
+	}
+	uintFID := uint(FID)
+
+	err2 := services.GetPreview(c, uintFID)
+	if err2 != nil {
+		log.Printf("生成预览失败 ：%s", err2)
+		ReturnError(c, "FAILED", err2.Error())
+		return
+	}
 }
