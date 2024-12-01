@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"errors"
 	"fmt"
@@ -174,7 +175,7 @@ func DeleteFolder(userId uint, binId uint, folderID uint) error {
 
 func deleteOSFolder(folderPath string) error {
 	folderPath = strings.ReplaceAll(folderPath, "\\", "/")
-	folderPath = path.Join(FileDirPath, folderPath)
+	folderPath = path.Join(config.FileResPath, folderPath)
 	err := os.RemoveAll(folderPath)
 	return err
 }

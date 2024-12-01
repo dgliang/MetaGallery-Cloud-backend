@@ -33,7 +33,8 @@ func Router(r *gin.Engine) {
 		api.DELETE("/removeFolder", controllers.BinController{}.RemoveFolder)
 		api.DELETE("/deleteFolder", controllers.BinController{}.DeleteFolder)
 		api.GET("/listBinFolder", controllers.BinController{}.ListBinFolder)
-		api.POST("recoverBinFolder", controllers.BinController{}.RecoverBinFolder)
+		api.POST("/recoverBinFolder", controllers.BinController{}.RecoverBinFolder)
+		api.POST("/shareFolder", controllers.FolderShareController{}.SetFolderShared)
 
 		// 文件管理
 		api.POST("/uploadFile", controllers.FileController{}.UploadFile)
@@ -47,5 +48,9 @@ func Router(r *gin.Engine) {
 		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
 		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
 
+
+		// 画廊管理
+		api.GET("/getUserGallery", controllers.FolderShareController{}.GetUserSharedFolders)
+		api.GET("/getAllGallery", controllers.FolderShareController{}.GetAllSharedFolders)
 	}
 }

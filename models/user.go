@@ -113,3 +113,13 @@ func GetUserID(account string) (uint, error) {
 	DataBase.Where("account= ? ", account).Find(&userData)
 	return userData.ID, nil
 }
+
+func GetUserAccountById(id uint) (string, error) {
+	if id == 0 {
+		return "", errors.New("数据库查询 Account 时 ID 不能为空")
+	}
+
+	var userData UserData
+	DataBase.Where("id= ? ", id).Find(&userData)
+	return userData.Account, nil
+}

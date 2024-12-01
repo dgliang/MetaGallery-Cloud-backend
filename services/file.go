@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"fmt"
 	"log"

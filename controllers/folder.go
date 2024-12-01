@@ -373,10 +373,12 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}
-	//if folderData.Favorite == favoriteStatus {
-	//	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("修改文件夹收藏状态为 %t", favoriteStatus))
-	//	return
-	//}
+
+	// 修改前后的收藏状态相同，直接返回成功
+	if folderData.Favorite == favoriteStatus {
+		ReturnSuccess(c, "SUCCESS", fmt.Sprintf("修改文件夹收藏状态为 %t", favoriteStatus))
+		return
+	}
 
 	// 更新文件夹的收藏状态
 	err = services.SetFolderFavorite(userID, req.FolderId, favoriteStatus)
