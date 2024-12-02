@@ -25,8 +25,6 @@ func FileExist(userID, parentId uint, fileName string) bool {
 	return isExist != 0
 }
 
-
-
 func FileType(fileName string) string {
 	ext := filepath.Ext(fileName)
 	return ext
@@ -354,7 +352,7 @@ func ReallyDeleteFile(fileID uint) error {
 		return fmt.Errorf("RecoverFile error: %w", err)
 	}
 
-	filePath := path.Join(FileDirPath, deletedData.Path)
+	filePath := path.Join(config.FileResPath, deletedData.Path)
 
 	err2 := os.Remove(filePath)
 	if err2 != nil {
@@ -376,7 +374,7 @@ func DownloadFile(c *gin.Context, userID uint, fileID uint) (multipart.File, err
 		return nil, fmt.Errorf("文件不存在")
 	}
 
-	filePath := path.Join(FileDirPath, fileData.Path)
+	filePath := path.Join(config.FileResPath, fileData.Path)
 	c.FileAttachment(filePath, fileData.FileName)
 
 	return nil, nil

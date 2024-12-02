@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"fmt"
 	"image/jpeg"
@@ -22,7 +23,7 @@ func GetPreview(c *gin.Context, fileID uint) error {
 	}
 
 	filePath := fileData.Path
-	fullFilePath := path.Join(FileDirPath, filePath)
+	fullFilePath := path.Join(config.FileResPath, filePath)
 
 	switch fileData.FileType {
 	case ".jpg", ".jpeg":
