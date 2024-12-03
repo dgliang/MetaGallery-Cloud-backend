@@ -48,9 +48,10 @@ func Router(r *gin.Engine) {
 		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
 		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
 
-
 		// 画廊管理
-		api.GET("/getUserGallery", controllers.FolderShareController{}.GetUserSharedFolders)
-		api.GET("/getAllGallery", controllers.FolderShareController{}.GetAllSharedFolders)
+		api.POST("/gallery/unshareFolder", controllers.FolderShareController{}.SetFolderUnShared)
+		api.GET("/gallery/getUserGallery", controllers.FolderShareController{}.GetUserSharedFolders)
+		api.GET("/gallery/getAllGallery", controllers.FolderShareController{}.GetAllSharedFolders)
+		api.GET("/gallery/getFolderInfo", controllers.FolderShareController{}.GetFolderInfo)
 	}
 }
