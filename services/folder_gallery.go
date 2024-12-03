@@ -96,3 +96,23 @@ func matchSharedFolderModelToResponse(folders []models.SharedFolder, totalPage i
 	}
 	return res
 }
+
+type sharedFolderInfoResponse struct {
+	OwnerAccount string `json:"owner_account"`
+	FolderInfo   folder `json:"folder_info"`
+}
+
+func GetSharedFolderInfo(ownerAccount, cid string) (sharedFolderInfoResponse, error) {
+	var sharedFolderInfo sharedFolderInfoResponse
+
+	folderData, err := GetFolderJsonFromIPFS(cid)
+	if err != nil {
+		return sharedFolderInfo, err
+	}
+
+	sharedFolderInfo = sharedFolderInfoResponse{
+		OwnerAccount: ownerAccount,
+		FolderInfo:   folderData,
+	}
+	return sharedFolderInfo, nil
+}

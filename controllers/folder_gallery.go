@@ -63,3 +63,34 @@ func (s FolderShareController) GetAllSharedFolders(c *gin.Context) {
 
 	ReturnSuccess(c, "SUCCESS", "", res)
 }
+
+func (s FolderShareController) GetFolderInfo(c *gin.Context) {
+	ownerAccount := c.Query("owner_account")
+	folderName := c.Query("folder_name")
+	ipfsHash := c.Query("ipfs_hash")
+
+	if ownerAccount == "" || folderName == "" || ipfsHash == "" {
+		ReturnError(c, "FAILED", "owner_account, folder_name, ipfs_hash 字段不能为空")
+		return
+	}
+
+	userId, err := models.GetUserID(ownerAccount)
+	if err != nil || userId == 0 {
+		ReturnError(c, "FAILED", "获取用户ID失败，用户不存在")
+		return
+	}
+
+	sharedFolder, err := services.GetSharedFolderByOwnerAndName(userId, folderName)
+	if err != nil || sharedFolder.ID == 0 {
+		ReturnError(c, "FAILED", "要删除的共享文件夹不存在")
+		return
+	}
+
+	res, err := services.GetSharedFolderInfo(ownerAccount, ipfsHash)
+	if err != nil {
+		ReturnServerError(c, "获取共享文件夹信息失败"+err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", res)
+}
