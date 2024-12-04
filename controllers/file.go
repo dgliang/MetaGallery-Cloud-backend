@@ -458,6 +458,33 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
 }
 
+func (receiver FileController) ReallyDeleteFile(c *gin.Context) {
+
+	var req deleteOrRecoverFilejson
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ReturnError(c, "FAILED", "提供的信息有误"+err.Error())
+		return
+	}
+
+	if req.Account == "" {
+		log.Printf("from %s 将文件彻底删除提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	if req.Fileid == 0 {
+		log.Printf("from %s 将文件移彻底删除提供的文件信息不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "文件ID不能为空")
+		return
+	}
+
+	err := services.ReallyDeleteFile(req.Fileid)
+	if err != nil {
+		ReturnError(c, "FAILED", err.Error())
+	}
+	ReturnSuccess(c, "SUCCESS", "文件彻底删除成功", nil)
+}
+
 func (receiver FileController) PreviewFile(c *gin.Context) {
 	account := c.Query("account")
 	fileID := c.Query("file_id")

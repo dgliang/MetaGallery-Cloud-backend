@@ -73,25 +73,6 @@ func GenerateFilePath(userID, parentFolderID uint, fileName string) (string, err
 	return filePath, nil
 }
 
-// func CreateFileData(userID uint, fileName string, parentFolderID uint) (FileData, error) {
-// 	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
-// 	if err != nil {
-// 		return FileData{}, err
-// 	}
-
-// 	newFile := FileData{
-// 		BelongTo:       userID,
-// 		FileName:       fileName,
-// 		ParentFolderID: parentFolderID,
-// 		Path:           filePath,
-// 	}
-
-// 	if err := DataBase.Create(&newFile).Error; err != nil {
-// 		return FileData{}, err
-// 	}
-// 	return newFile, nil
-// }
-
 func CreateFileData2(userID uint, fileName string, parentFolderID uint, fileType string) (FileData, error) {
 	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
 	if err != nil {
@@ -123,23 +104,7 @@ func UnscopedDeleteFileData(fileID uint) (FileData, error) {
 	return deletedData, err
 }
 
-// func RenameFileWithFileID(fileID uint, newFileName string) error {
-// 	File := FileData{
-// 		ID: fileID,
-// 	}
-// 	var originFileData FileData
-// 	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
-
-// 	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
-// 	return nil
-// }
-
-func RenameFileWithFileID2(fileID uint, newFileName string) error {
+func RenameFileWithFileID(fileID uint, newFileName string) error {
 	File := FileData{
 		ID: fileID,
 	}
@@ -150,23 +115,7 @@ func RenameFileWithFileID2(fileID uint, newFileName string) error {
 	return nil
 }
 
-// func UnscopedRenameFile(fileID uint, newFileName string) error {
-// 	File := FileData{
-// 		ID: fileID,
-// 	}
-// 	var originFileData FileData
-// 	DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).First(&originFileData)
-
-// 	newFilePath, err := GenerateFilePath(originFileData.BelongTo, originFileData.ParentFolderID, newFileName)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	DataBase.Model(&File).Unscoped().Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, Path: newFilePath})
-// 	return nil
-// }
-
-func UnscopedRenameFile2(fileID uint, newFileName string) error {
+func UnscopedRenameFile(fileID uint, newFileName string) error {
 	File := FileData{
 		ID: fileID,
 	}
@@ -223,6 +172,14 @@ func GetSubFiles(parentFolderID uint) ([]FileBrief, error) {
 	}
 
 	return fileBriefs, nil
+}
+
+func GetSubFileDatas(parentFolderID uint) ([]FileData, error) {
+	var subFiles []FileData
+
+	DataBase.Set("gorm:auto_preload", false).Model(&FileData{}).Where("parent_folder_id = ?", parentFolderID).Find(&subFiles)
+
+	return subFiles, nil
 }
 
 func SetFileFavorite(fileID uint) {

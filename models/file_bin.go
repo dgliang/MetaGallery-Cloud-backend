@@ -28,6 +28,9 @@ func InsertFileBinItem(fileBinItem FileBin) error {
 
 func DeleteFileBinItem(fileID uint) (FileBin, error) {
 	var deletedItem FileBin
+	if err := DataBase.Model(&FileBin{}).Where("file_id = ?", fileID).Find(&deletedItem).Error; err != nil {
+		return FileBin{}, err
+	}
 	if err := DataBase.Model(&FileBin{}).Where("file_id = ?", fileID).Delete(&deletedItem).Error; err != nil {
 		return FileBin{}, err
 	}

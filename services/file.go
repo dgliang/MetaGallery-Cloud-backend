@@ -90,37 +90,6 @@ func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
 	return nil
 }
 
-// func RenameFileAndUpdatePath(userID, fileID uint, newFileName string) error {
-
-// 	//获取文件的父文件夹id
-// 	uintPID, err := models.GetParentFolderID(fileID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	//判断是否有同名文件
-// 	isExist := FileExist(userID, uintPID, newFileName)
-// 	if isExist {
-// 		return fmt.Errorf("FileName already exists: %s", newFileName)
-// 	}
-// 	//获取原文件路径
-// 	oldPath, err := models.GetFilePath(fileID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	//生成新文件路径
-// 	newPath, err := models.GenerateFilePath(userID, uintPID, newFileName)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	//修改本地文件名称
-// 	oldFullPath := path.Join(FileDirPath, oldPath)
-// 	newFullPath := path.Join(FileDirPath, newPath)
-// 	os.Rename(oldFullPath, newFullPath)
-// 	//修改数据库相关内容
-// 	models.RenameFileWithFileID(fileID, newFileName)
-// 	return nil
-// }
-
 func RenameFile(userID, fileID uint, newFileName string) error {
 
 	//获取文件的父文件夹id
@@ -134,7 +103,7 @@ func RenameFile(userID, fileID uint, newFileName string) error {
 		return fmt.Errorf("FileName already exists: %s", newFileName)
 	}
 
-	models.RenameFileWithFileID2(fileID, newFileName)
+	models.RenameFileWithFileID(fileID, newFileName)
 	return nil
 }
 
@@ -299,7 +268,7 @@ func RecoverFile(userID uint, fileID uint) error {
 		return err
 	}
 	// 删除对应回收站项
-	if err := models.DeleteBinItem(fileBinItem.ID); err != nil {
+	if err := models.DeleteBinItem(fileBinItem.BinID); err != nil {
 		return fmt.Errorf("RecoverFile error: %w", err)
 	}
 
@@ -337,22 +306,12 @@ func ReallyDeleteFile(fileID uint) error {
 		return fmt.Errorf("RecoverFile error: fileRecycleItem do not exist")
 	}
 
-	// 删除对应文件回收项
-	fileBinItem, err := models.DeleteFileBinItem(fileID)
+	fileData, err := models.GetDeletedFileData(fileID)
 	if err != nil {
 		return err
 	}
-	// 删除对应回收站项
-	if err := models.DeleteBinItem(fileBinItem.ID); err != nil {
-		return fmt.Errorf("RecoverFile error: %w", err)
-	}
-
-	deletedData, err := models.UnscopedDeleteFileData(fileID)
-	if err != nil {
-		return fmt.Errorf("RecoverFile error: %w", err)
-	}
-
-	filePath := path.Join(config.FileResPath, deletedData.Path)
+	//文件系统中删除文件
+	filePath := path.Join(config.FileResPath, fileData.Path)
 
 	err2 := os.Remove(filePath)
 	if err2 != nil {
@@ -360,6 +319,30 @@ func ReallyDeleteFile(fileID uint) error {
 	} else {
 		fmt.Println("File successfully deleted")
 	}
+
+	// 删除对应文件回收项
+	fileBinItem, err := models.DeleteFileBinItem(fileID)
+	if err != nil {
+		return err
+	}
+	// 删除对应回收站项
+	if err := models.DeleteBinItem(fileBinItem.BinID); err != nil {
+		return fmt.Errorf("RecoverFile error: %w", err)
+	}
+
+	_, err3 := models.UnscopedDeleteFileData(fileID)
+	if err3 != nil {
+		return fmt.Errorf("RecoverFile error: %w", err)
+	}
+
+	// filePath := path.Join(config.FileResPath, deletedData.Path)
+
+	// err2 := os.Remove(filePath)
+	// if err2 != nil {
+	// 	fmt.Println("Error deleting file:", err)
+	// } else {
+	// 	fmt.Println("File successfully deleted")
+	// }
 
 	return nil
 }

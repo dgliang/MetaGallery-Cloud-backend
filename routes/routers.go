@@ -2,7 +2,6 @@ package routes
 
 import (
 	"MetaGallery-Cloud-backend/controllers"
-	"MetaGallery-Cloud-backend/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +15,7 @@ func Router(r *gin.Engine) {
 		api.POST("/login", controllers.UerController{}.Login)
 
 		// 除了注册登录外，其余接口都要进行 jwt 验证
-		api.Use(middlewares.TokenAuthMiddleware())
+		// api.Use(middlewares.TokenAuthMiddleware())
 
 		// 账号管理
 		api.GET("/getUserInfo", controllers.UerController{}.GetUserInfo)
@@ -45,9 +44,9 @@ func Router(r *gin.Engine) {
 		api.DELETE("/removeFile", controllers.FileController{}.RemoveFile)
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
+		api.DELETE("/deleteFile", controllers.FileController{}.ReallyDeleteFile)
 		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
 		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
-
 
 		// 画廊管理
 		api.GET("/getUserGallery", controllers.FolderShareController{}.GetUserSharedFolders)
