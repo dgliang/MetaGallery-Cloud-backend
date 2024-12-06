@@ -3,11 +3,12 @@ package middlewares
 import (
 	"MetaGallery-Cloud-backend/controllers"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
-	"os"
-	"strings"
 )
 
 var secretKey = ""

@@ -4,6 +4,7 @@ import (
 	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"fmt"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"os"
@@ -30,7 +31,34 @@ func GetPreview(c *gin.Context, fileID uint) error {
 		return jpegPreview(c, fullFilePath)
 	case ".png":
 		return pngPreview(c, fullFilePath)
+	case ".gif":
+		return gifPreview(c, fullFilePath)
+		// case ".bmp":
+		// 	return bmpPreview(c, fullFilePath)
 	}
+
+	return fmt.Errorf("该格式不支持预览")
+}
+
+func gifPreview(c *gin.Context, fullFilePath string) error {
+	file, err := os.Open(fullFilePath)
+	if err != nil {
+
+		return err
+	}
+	defer file.Close()
+
+	img, err := gif.Decode(file)
+	if err != nil {
+
+		return err
+	}
+
+	// 调整图片大小
+	previewIMG := resize.Resize(512, 0, img, resize.Lanczos3) // 100表示宽度，高度设为0表示按比例调整
+
+	c.Header("Content-Type", "image/gif")
+	png.Encode(c.Writer, previewIMG)
 
 	return nil
 }
@@ -84,3 +112,28 @@ func pngPreview(c *gin.Context, fullFilePath string) error {
 
 	return nil
 }
+
+// func bmpPreview(c *gin.Context, fullFilePath string) error {
+// 	file, err := os.Open(fullFilePath)
+// 	if err != nil {
+
+// 		return err
+// 	}
+// 	defer file.Close()
+// 	// log.Println("open file success")
+// 	// 解码bmp图片
+// 	img, err := bmp.Decode(file)
+// 	if err != nil {
+
+// 		return err
+// 	}
+
+// 	// 调整图片大小
+// 	previewIMG := resize.Resize(512, 0, img, resize.Lanczos3) // 100表示宽度，高度设为0表示按比例调整
+
+// 	// fmt.Println("缩略图已生成：thumbnail.png")
+// 	c.Header("Content-Type", "image/bmp")
+// 	png.Encode(c.Writer, previewIMG)
+
+// 	return nil
+// }

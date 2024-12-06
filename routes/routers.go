@@ -45,6 +45,7 @@ func Router(r *gin.Engine) {
 		api.DELETE("/removeFile", controllers.FileController{}.RemoveFile)
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
+		api.DELETE("/deleteFile", controllers.FileController{}.ReallyDeleteFile)
 		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
 		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
 

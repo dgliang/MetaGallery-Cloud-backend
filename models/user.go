@@ -25,8 +25,8 @@ type UserData struct {
 
 // 由账号密码创建账号信息
 func CreateAccount(Account, Password, avatar, userName string) (uint, error) {
-	var userData UserData
-	userData = UserData{
+	// var userData UserData
+	userData := UserData{
 		Account:      Account,
 		Password:     Password,
 		BriefIntro:   "这个人很懒，什么都没有写",
