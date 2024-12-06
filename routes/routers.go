@@ -2,6 +2,7 @@ package routes
 
 import (
 	"MetaGallery-Cloud-backend/controllers"
+	"MetaGallery-Cloud-backend/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
