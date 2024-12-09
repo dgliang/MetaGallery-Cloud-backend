@@ -19,3 +19,9 @@ func SplitBinTimestamp(str string) (string, string) {
 func GenerateIPFSUrl(cid string) string {
 	return config.PinataHostUrl + cid + config.PinataGatewayKey
 }
+
+func TrimPathPrefix(path string) string {
+	re := regexp.MustCompile(`^/\d+`)
+	res := re.ReplaceAllString(path, "")
+	return res
+}
