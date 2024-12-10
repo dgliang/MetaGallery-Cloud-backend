@@ -208,12 +208,12 @@ func UnpinFromIPFS(CID string) error {
 
 type file struct {
 	FileName string `json:"file_name"`
-	CID      string `json:"cid"`
+	IPFSHash string `json:"ipfs_hash"`
 }
 
 type subFolder struct {
 	FolderName string `json:"folder_name"`
-	CID        string `json:"cid"`
+	IPFSHash   string `json:"ipfs_hash"`
 }
 
 type folder struct {
@@ -245,12 +245,12 @@ func GetFolderJsonFromIPFS(cid string) (folder, error) {
 	log.Printf("Folder Name: %s\n", folderData.FolderName)
 	log.Println("Files:")
 	for _, file := range folderData.Files {
-		log.Printf("- CID: %s, File Name: %s\n", file.CID, file.FileName)
+		log.Printf("- CID: %s, File Name: %s\n", file.IPFSHash, file.FileName)
 	}
 
 	log.Println("Subfolders:")
 	for _, subfolder := range folderData.SubFolders {
-		log.Printf("- CID: %s, SubFolder Name: %s\n", subfolder.CID, subfolder.FolderName)
+		log.Printf("- CID: %s, SubFolder Name: %s\n", subfolder.IPFSHash, subfolder.FolderName)
 	}
 	return folderData, nil
 }
