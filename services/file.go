@@ -107,6 +107,20 @@ func RenameFile(userID, fileID uint, newFileName string) error {
 	return nil
 }
 
+func IsFileBelongto(userID, fileID uint) bool {
+
+	fileData, err := models.GetFileData(fileID)
+	if err != nil {
+		return false
+	}
+
+	if fileData.BelongTo != userID {
+		return false
+	}
+
+	return true
+}
+
 // 批量更新文件路径
 func updateSubFilesPaths(tx *gorm.DB, userId uint, oldPath, newPath string) error {
 	// 获取所有直接子文件夹
@@ -152,25 +166,6 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 
 	// 遍历子文件进行删除
 	for _, file := range subFiles {
-
-		//创建回收站记录
-		// binItem, err := models.InsertBinItem(models.Bin{
-		// 	Type:        models.FILE,
-		// 	DeletedTime: deleteTime,
-		// 	UserID:      file.BelongTo,
-		// })
-		// if err != nil {
-		// 	return fmt.Errorf("RemoveSubFiles error: %w", err)
-		// }
-
-		//创建文件回收项
-		// fileBinItem := models.FileBin{
-		// 	FileID: file.ID,
-		// 	BinID:  binItem.ID,
-		// }
-		// if err := models.InsertFileBinItem(fileBinItem); err != nil {
-		// 	return err
-		// }
 
 		// 对文件表中的记录软删除
 		if err := models.RemoveFile(file.ID); err != nil {
@@ -301,7 +296,7 @@ func GetBinFiles(userID uint) ([]models.FileBrief, error) {
 	return fileBriefs, nil
 }
 
-func ReallyDeleteFile(fileID uint) error {
+func ActuallyDeleteFile(fileID uint) error {
 	if !models.FileBinItemExist(fileID) {
 		return fmt.Errorf("RecoverFile error: fileRecycleItem do not exist")
 	}
@@ -334,15 +329,6 @@ func ReallyDeleteFile(fileID uint) error {
 	if err3 != nil {
 		return fmt.Errorf("RecoverFile error: %w", err)
 	}
-
-	// filePath := path.Join(config.FileResPath, deletedData.Path)
-
-	// err2 := os.Remove(filePath)
-	// if err2 != nil {
-	// 	fmt.Println("Error deleting file:", err)
-	// } else {
-	// 	fmt.Println("File successfully deleted")
-	// }
 
 	return nil
 }

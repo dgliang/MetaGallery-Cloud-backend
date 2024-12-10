@@ -27,10 +27,10 @@ func (u UerController) Register(c *gin.Context) {
 		return
 	}
 	// // 如果密码 password 不符合规范
-	// if !services.IsValidPassword(password) {
-	// 	ReturnError(c, "FAILED", "密码 password 不符合规范")
-	// 	return
-	// }
+	if !services.IsValidPassword(password) {
+		ReturnError(c, "FAILED", "密码 password 不符合规范")
+		return
+	}
 
 	if password != confirmPassword {
 		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)

@@ -458,7 +458,7 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
 }
 
-func (receiver FileController) ReallyDeleteFile(c *gin.Context) {
+func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 
 	var req deleteOrRecoverFilejson
 
@@ -478,7 +478,7 @@ func (receiver FileController) ReallyDeleteFile(c *gin.Context) {
 		return
 	}
 
-	err := services.ReallyDeleteFile(req.Fileid)
+	err := services.ActuallyDeleteFile(req.Fileid)
 	if err != nil {
 		ReturnError(c, "FAILED", err.Error())
 	}
@@ -517,10 +517,18 @@ func (receiver FileController) PreviewFile(c *gin.Context) {
 	}
 	uintFID := uint(FID)
 
-	err2 := services.GetPreview(c, uintFID)
-	if err2 != nil {
-		log.Printf("生成预览失败 ：%s", err2)
-		ReturnError(c, "FAILED", err2.Error())
+	// err2 := services.GetPreview(c, uintFID)
+	// if err2 != nil {
+	// 	log.Printf("生成预览失败 ：%s", err2)
+	// 	ReturnError(c, "FAILED", err2.Error())
+	// 	return
+	// }
+	
+	fileURL, err := services.GetPreviewURL(c, uintFID)
+	if err != nil {
+		log.Printf("获取预览失败 ：%s", err)
+		ReturnError(c, "FAILED", err.Error())
 		return
 	}
+	ReturnSuccess(c, "SUCCESS", fileURL)
 }
