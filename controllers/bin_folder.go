@@ -32,7 +32,7 @@ func (b BinController) RemoveFolder(c *gin.Context) {
 
 	folderData, err1 := models.GetFolderDataByID(req.FolderId)
 	if err1 != nil || folderData.ID == 0 {
-		ReturnError(c, "FAILED", "要删除的文件不存在")
+		ReturnError(c, "FAILED", "要删除的文件夹不存在")
 		return
 	}
 

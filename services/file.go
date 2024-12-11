@@ -209,8 +209,8 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	for _, file := range subFiles {
 
 		// 对文件表中的记录软删除
-		if err := models.RemoveFile(file.ID); err != nil {
-			return fmt.Errorf("RemoveSubFiles error: %w", err)
+		if err := tx.Delete(&file).Error; err != nil {
+			return err
 		}
 	}
 
