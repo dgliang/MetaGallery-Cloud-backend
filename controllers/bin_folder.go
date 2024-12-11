@@ -145,7 +145,7 @@ func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson 
 				User:       folder.FolderData.BelongTo,
 				FolderName: folder.FolderData.FolderName,
 				ParentID:   folder.FolderData.ParentFolder,
-				Path:       folder.FolderData.Path,
+				Path:       TrimPathPrefix(folder.FolderData.Path),
 				IsFavorite: folder.FolderData.Favorite,
 				IsShare:    folder.FolderData.Share,
 				IPFSHash:   folder.FolderData.IPFSInformation,

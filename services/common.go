@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"regexp"
 	"time"
 )
@@ -13,4 +14,14 @@ func GenerateBinTimestamp(str string, t time.Time) string {
 func SplitBinTimestamp(str string) (string, string) {
 	re := regexp.MustCompile(`^(.*)_bin_\d{8}_\d{6}$`)
 	return re.FindStringSubmatch(str)[1], re.FindStringSubmatch(str)[0]
+}
+
+func GenerateIPFSUrl(cid string) string {
+	return config.PinataHostUrl + cid + config.PinataGatewayKey
+}
+
+func TrimPathPrefix(path string) string {
+	re := regexp.MustCompile(`^/\d+`)
+	res := re.ReplaceAllString(path, "")
+	return res
 }

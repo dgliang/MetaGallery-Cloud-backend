@@ -4,6 +4,7 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"fmt"
 	"log"
+	"path"
 	"strings"
 
 	"gorm.io/gorm"
@@ -22,10 +23,12 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 
 	if shareState {
 		var introStr string
-		if len(intro) > 0 {
-			introStr = intro[0]
+		var sharedName string
+		if len(intro) > 1 {
+			sharedName = intro[0]
+			introStr = intro[1]
 		} else {
-			return fmt.Errorf("SetFolderShareState: intro is empty")
+			return fmt.Errorf("SetFolderShareState: sharedName or intro is empty")
 		}
 
 		// 如果 Share 状态为 true，则将文件夹上传到 IPFS
@@ -43,7 +46,7 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 
 		// 3. 更新数据库，在 shared_folders 表中插入一条记录
 		log.Println(folderCID)
-		if _, err := CreateSharedFolder(userId, folderId, introStr, folderCID); err != nil {
+		if _, err := CreateSharedFolder(userId, folderId, sharedName, introStr, folderCID); err != nil {
 			return fmt.Errorf("SetFolderShareState: create shared folder: %w", err)
 		}
 	} else {
@@ -114,25 +117,27 @@ uploadFolderToIPFS
 */
 func uploadFolderToIPFS(folderData models.FolderData) (string, error) {
 	// 1. 上传当前文件夹中的文件，使用 UploadFileToIPFS 接口
-	// TODO: 上传当前文件夹中的文件，同时获取所有的 file 构成 filesMap
-	/*
-		"filesMap": [
-			{
-				"file_name": "file1.txt",
-				"cid": "Qm...cid_of_file1",
-			},
-			{
-				"file_name": "file2.txt",
-				"cid": "Qm...cid_of_file2",
-			},
-			...
-		]
-	*/
 	var filesMap []map[string]interface{}
-	filesMap = append(filesMap, map[string]interface{}{
-		"file_name": "file1.txt",
-		"cid":       "Qm...cid_of_file1",
-	})
+	files, err := models.GetSubFiles(folderData.ID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		// UploadFileToIPFS 使用文件路径（数据库中的文件路径，以 /{userID} 开头）
+		filePath := path.Join(folderData.Path, fmt.Sprintf("%d", file.ID))
+		log.Println("Uploading file: " + filePath)
+
+		cid, err := UploadFileToIPFS(filePath)
+		if err != nil {
+			return "", err
+		}
+
+		filesMap = append(filesMap, map[string]interface{}{
+			"file_name": file.FileName,
+			"cid":       cid,
+		})
+	}
 
 	// 2. 递归上传子文件夹，使用 ListChildFolders 获取所有的子文件夹
 	var subFoldersMap []map[string]interface{}
@@ -166,23 +171,48 @@ func uploadFolderToIPFS(folderData models.FolderData) (string, error) {
 	return folderCID, nil
 }
 
-// 获取文件夹内部子文件夹和子文件的结构，并创建 JSON 格式文件
+/*
+获取文件夹内部子文件夹和子文件的结构，并创建 JSON 格式文件。JSON 数据格式：
+
+	{
+	  "folder_name": "my_folder",
+	  "files": [
+	    {
+	      "file_name": "file1.txt",
+	      "cid": "Qm...cid_of_file1"
+	    },
+	    {
+	      "file_name": "file2.txt",
+	      "cid": "Qm...cid_of_file2"
+	    },
+	    ...
+	  ],
+	  "subfolders": [
+	    {
+	      "folder_name": "subfolder1",
+	      "cid": "Qm...cid_of_subfolder"
+	    },
+	    ...
+	  ]
+	}
+*/
 func generateMetaInFolder(folderName string, files, subFolders []map[string]interface{}) map[string]interface{} {
 	folderMeta := map[string]interface{}{
-		"folderName": folderName,
-		"files":      files,
-		"subFolders": subFolders,
+		"folder_name": folderName,
+		"files":       files,
+		"subfolders":  subFolders,
 	}
 	return folderMeta
 }
 
 // 数据库中 shared_folders 表中创建新的共享文件夹的记录
-func CreateSharedFolder(userId, folderId uint, intro, ipfsHash string) (uint, error) {
+func CreateSharedFolder(userId, folderId uint, sharedName, intro, ipfsHash string) (uint, error) {
 	sharedFolder := models.SharedFolder{
-		OwnerID:  userId,
-		FolderID: folderId,
-		Intro:    intro,
-		IPFSHash: ipfsHash,
+		OwnerID:    userId,
+		FolderID:   folderId,
+		SharedName: sharedName,
+		Intro:      intro,
+		IPFSHash:   ipfsHash,
 	}
 
 	return sharedFolder.ID, models.DataBase.Create(&sharedFolder).Error
@@ -191,4 +221,11 @@ func CreateSharedFolder(userId, folderId uint, intro, ipfsHash string) (uint, er
 // 数据库中 shared_folders 表中删除的共享文件夹的记录
 func DeleteSharedFolder(userId, folderId uint) error {
 	return models.DataBase.Where("owner_id = ? AND folder_id = ?", userId, folderId).Delete(&models.SharedFolder{}).Error
+}
+
+// 根据 owner_id 和 folder_name 查询共享文件夹
+func GetSharedFolderByOwnerAndName(ownerId uint, folderName string) (models.SharedFolder, error) {
+	var sharedFolder models.SharedFolder
+	return sharedFolder, models.DataBase.Where("owner_id = ? AND shared_name = ?", ownerId, folderName).
+		First(&sharedFolder).Error
 }

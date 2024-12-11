@@ -19,7 +19,7 @@ type FileData struct {
 	Path           string
 	Favorite       bool `gorm:"index"`
 	Share          bool
-	IPFSInfomation string
+	IPFSInfomation string `gorm:"column:ipfs_information"`
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      gorm.DeletedAt `gorm:"index"`

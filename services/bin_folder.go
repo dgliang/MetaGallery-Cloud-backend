@@ -212,10 +212,25 @@ func ListBinFolders(userId uint) ([]FolderBinInfo, error) {
 			return nil, err
 		}
 
+		// 将 folderName 和 path 处理，去除时间戳
+		fullFolderName, _ := SplitBinTimestamp(folder.FolderName)
+		fullFolderPath := strings.ReplaceAll(folder.Path, folder.FolderName, fullFolderName)
 		folderBinInfo = append(folderBinInfo, FolderBinInfo{
-			FolderData: folder,
-			BinId:      bin.ID,
-			DelTime:    bin.DeletedTime,
+			FolderData: models.FolderData{
+				ID:              folder.ID,
+				BelongTo:        folder.BelongTo,
+				FolderName:      fullFolderName,
+				ParentFolder:    folder.ParentFolder,
+				Path:            fullFolderPath,
+				Favorite:        folder.Favorite,
+				Share:           folder.Share,
+				IPFSInformation: folder.IPFSInformation,
+				CreatedAt:       folder.CreatedAt,
+				UpdatedAt:       folder.UpdatedAt,
+				DeletedAt:       folder.DeletedAt,
+			},
+			BinId:   bin.ID,
+			DelTime: bin.DeletedTime,
 		})
 	}
 

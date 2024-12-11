@@ -29,7 +29,7 @@ func ListUserSharedFolders(ownerId uint, pageNum int) ([]sharedFolderResponse, e
 	var sharedFolders []models.SharedFolder
 	if err := models.DataBase.Model(&models.SharedFolder{}).
 		Where("owner_id = ?", ownerId).
-		Order("created_at DESC"). // 按创建时间降序排序，新的在前
+		// Order("created_at DESC"). // 按创建时间降序排序，新的在前
 		Limit(PAGE_SIZE).
 		Offset(offset).
 		Find(&sharedFolders).Error; err != nil {
@@ -87,7 +87,7 @@ func matchSharedFolderModelToResponse(folders []models.SharedFolder, totalPage i
 
 		res = append(res, sharedFolderResponse{
 			OwnerAccount: ownerAccount,
-			FolderName:   "folder name", // folder.FolderName,
+			FolderName:   folder.SharedName,
 			IPFSHash:     folder.IPFSHash,
 			Intro:        folder.Intro,
 			PinDate:      folder.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -95,4 +95,24 @@ func matchSharedFolderModelToResponse(folders []models.SharedFolder, totalPage i
 		})
 	}
 	return res
+}
+
+type sharedFolderInfoResponse struct {
+	OwnerAccount string `json:"owner_account"`
+	FolderInfo   folder `json:"folder_info"`
+}
+
+func GetSharedFolderInfo(ownerAccount, cid string) (sharedFolderInfoResponse, error) {
+	var sharedFolderInfo sharedFolderInfoResponse
+
+	folderData, err := GetFolderJsonFromIPFS(cid)
+	if err != nil {
+		return sharedFolderInfo, err
+	}
+
+	sharedFolderInfo = sharedFolderInfoResponse{
+		OwnerAccount: ownerAccount,
+		FolderInfo:   folderData,
+	}
+	return sharedFolderInfo, nil
 }

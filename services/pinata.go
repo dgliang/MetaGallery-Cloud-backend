@@ -205,3 +205,52 @@ func UnpinFromIPFS(CID string) error {
 
 	return nil
 }
+
+type file struct {
+	FileName string `json:"file_name"`
+	IPFSHash string `json:"ipfs_hash"`
+}
+
+type subFolder struct {
+	FolderName string `json:"folder_name"`
+	IPFSHash   string `json:"ipfs_hash"`
+}
+
+type folder struct {
+	FolderName string      `json:"folder_name"`
+	Files      []file      `json:"files"`
+	SubFolders []subFolder `json:"subfolders"`
+}
+
+func GetFolderJsonFromIPFS(cid string) (folder, error) {
+	url := GenerateIPFSUrl(cid)
+
+	response, err := http.Get(url)
+	if err != nil {
+		return folder{}, fmt.Errorf("error making GET request: %s", err)
+	}
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return folder{}, fmt.Errorf("error reading response body: %s", err)
+	}
+
+	var folderData folder
+	err = json.Unmarshal(body, &folderData)
+	if err != nil {
+		return folder{}, fmt.Errorf("error unmarshalling JSON: %s", err)
+	}
+
+	log.Printf("Folder Name: %s\n", folderData.FolderName)
+	log.Println("Files:")
+	for _, file := range folderData.Files {
+		log.Printf("- CID: %s, File Name: %s\n", file.IPFSHash, file.FileName)
+	}
+
+	log.Println("Subfolders:")
+	for _, subfolder := range folderData.SubFolders {
+		log.Printf("- CID: %s, SubFolder Name: %s\n", subfolder.IPFSHash, subfolder.FolderName)
+	}
+	return folderData, nil
+}
