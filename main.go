@@ -18,7 +18,8 @@ func main() {
 
 	routes.Router(r)
 	// 提供静态文件服务
-	r.Static("/resources", "./resources")
+	r.Static("/resources/img", "./resources/img")
+
 	// 添加静态文件服务：假设 public 文件夹中包含 register.html 和其他静态文件
 	r.Static("/public", "./public")
 	r.StaticFile("/favicon.ico", "./public/favicon.ico")

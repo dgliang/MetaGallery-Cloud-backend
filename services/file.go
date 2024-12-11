@@ -90,6 +90,22 @@ func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
 	return nil
 }
 
+func GetFileDetail(fileID uint) (models.FileData, error) {
+	fileData, err := models.GetFileData(fileID)
+	if err != nil {
+		return models.FileData{}, err
+	}
+	// 将文件路径转为正确形式
+	path := fileData.Path
+	dirParts := strings.Split(path, "/")
+	dirParts[len(dirParts)-1] = fileData.FileName
+	newPath := strings.Join(dirParts[2:], "/")
+
+	fileData.Path = newPath
+
+	return fileData, err
+}
+
 func RenameFile(userID, fileID uint, newFileName string) error {
 
 	//获取文件的父文件夹id
@@ -119,6 +135,30 @@ func IsFileBelongto(userID, fileID uint) bool {
 	}
 
 	return true
+}
+
+// 获取文件夹中的子文件
+func GetSubFiles(parentFolderID uint) ([]models.FileBrief, error) {
+	subFiles, err := models.GetSubFiles(parentFolderID)
+	if err != nil {
+		return nil, err
+	}
+
+	var fileBriefs []models.FileBrief
+
+	for _, source := range subFiles {
+		destination := models.FileBrief{
+			ID:       source.ID,
+			FileName: source.FileName,
+			FileType: source.FileType,
+			Favorite: source.Favorite,
+			Share:    source.Share,
+			InBin:    source.DeletedAt.Time,
+		}
+		fileBriefs = append(fileBriefs, destination)
+	}
+
+	return fileBriefs, nil
 }
 
 // 批量更新文件路径
@@ -151,6 +191,7 @@ func updateSubFilesPaths(tx *gorm.DB, userId uint, oldPath, newPath string) erro
 	return nil
 }
 
+// 将被移入回收站内的文件夹的子文件标记软删除
 func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	// 获取所有直接子文件夹
 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
@@ -176,6 +217,7 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	return nil
 }
 
+// 将被移出回收站内的文件夹的子文件软删除标记去除
 func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
 
@@ -198,6 +240,7 @@ func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	return nil
 }
 
+// 将文件移入回收站
 func RemoveFile(fileID uint) error {
 
 	fileData, err := models.GetFileData(fileID)
@@ -229,6 +272,7 @@ func RemoveFile(fileID uint) error {
 	return nil
 }
 
+// 将文件移出回收站
 func RecoverFile(userID uint, fileID uint) error {
 	//回收站内是否有该文件
 	if !models.FileBinItemExist(fileID) {
@@ -270,9 +314,12 @@ func RecoverFile(userID uint, fileID uint) error {
 	return nil
 }
 
+// 获取用户回收站内所有文件的简讯
 func GetBinFiles(userID uint) ([]models.FileBrief, error) {
+	//获取这个用户在回收站内所有文件的fileBinItem的ID
 	_, binItemIDs := models.SearchBinItems(userID)
 
+	//遍历所有的这些fileBinItem，获取文件简讯
 	var fileBriefs []models.FileBrief
 	for _, binItemID := range binItemIDs {
 
@@ -296,7 +343,9 @@ func GetBinFiles(userID uint) ([]models.FileBrief, error) {
 	return fileBriefs, nil
 }
 
+// 彻底粉碎文件
 func ActuallyDeleteFile(fileID uint) error {
+	// 检查回收站内是否有该文件
 	if !models.FileBinItemExist(fileID) {
 		return fmt.Errorf("RecoverFile error: fileRecycleItem do not exist")
 	}
@@ -333,8 +382,9 @@ func ActuallyDeleteFile(fileID uint) error {
 	return nil
 }
 
+// 下载文件
 func DownloadFile(c *gin.Context, userID uint, fileID uint) (multipart.File, error) {
-
+	// 获取文件信息（路径），同时检查文件是否存在
 	fileData, err := models.GetFileData(fileID)
 	if err != nil {
 		return nil, err
@@ -343,8 +393,57 @@ func DownloadFile(c *gin.Context, userID uint, fileID uint) (multipart.File, err
 		return nil, fmt.Errorf("文件不存在")
 	}
 
+	//返回文件
 	filePath := path.Join(config.FileResPath, fileData.Path)
 	c.FileAttachment(filePath, fileData.FileName)
 
 	return nil, nil
+}
+
+// 在非回收站内查找名称中包含某个子字符串的文件
+func SearchFile(userID uint, pattern string) ([]models.FileData, error) {
+	fileDatas, err := models.SearchFile(userID, pattern)
+	if err != nil {
+		return nil, err
+	}
+	return fileDatas, nil
+}
+
+// 查找已标记为收藏的名称中包含某个子字符串的文件
+func SearchFavorFile(userID uint, pattern string) ([]models.FileData, error) {
+	fileDatas, err := models.SearchFavorFile(userID, pattern)
+	if err != nil {
+		return nil, err
+	}
+	return fileDatas, nil
+}
+
+// 在回收站内查找名称中包含某个子字符串的文件
+func SearchBinFile(userID uint, pattern string) ([]models.FileBrief, error) {
+	_, binItemIDs := models.SearchBinItems(userID)
+
+	var fileBriefs []models.FileBrief
+	for _, binItemID := range binItemIDs {
+		fileID := models.GetFileIDInBIN(binItemID)
+
+		fileData, err := models.GetDeletedFileData(fileID)
+		if err != nil {
+			return nil, err
+		}
+		// 字符串查找
+		if strings.Contains(fileData.FileName, pattern) {
+			fileBrief := models.FileBrief{
+				ID:       fileData.ID,
+				FileName: fileData.FileName,
+				FileType: fileData.FileType,
+				Favorite: fileData.Favorite,
+				Share:    fileData.Share,
+				InBin:    fileData.DeletedAt.Time,
+			}
+			fileBriefs = append(fileBriefs, fileBrief)
+		}
+
+	}
+
+	return fileBriefs, nil
 }

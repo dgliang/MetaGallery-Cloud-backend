@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"MetaGallery-Cloud-backend/controllers"
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
@@ -22,7 +21,11 @@ func ResourceAccessAuthMiddleWare() gin.HandlerFunc {
 		if err == nil && avail {
 			c.Next()
 		} else {
-			controllers.ReturnError(c, "FORBIDDEN", "访问被禁止")
+			// controllers.ReturnError(c, "FORBIDDEN", "访问被禁止")
+			c.JSON(403, gin.H{
+				"error":   "FORBIDDEN",
+				"message": "访问禁止",
+			})
 			c.Abort() // 阻止请求继续执行
 			return
 		}

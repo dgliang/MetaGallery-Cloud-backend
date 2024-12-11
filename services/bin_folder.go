@@ -64,6 +64,9 @@ func RemoveFolder(userId, folderID uint) error {
 		}
 
 		// 更新所有子文件的路径
+		if err := updateSubFilesPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("UpdateSubFilesState: %w", err)
+		}
 
 		// 将文件夹数据插入到回收站表 Bin
 		bin := models.Bin{
@@ -85,10 +88,11 @@ func RemoveFolder(userId, folderID uint) error {
 		}
 
 		parentPath := folder.Path + "/"
+		fmt.Printf("parentPath" + parentPath)
 		// 先软删除文件
-		if err := removeSubFiles(tx, userId, parentPath); err != nil {
-			return err
-		}
+		// if err := removeSubFiles(tx, userId, parentPath); err != nil {
+		// 	return err
+		// }
 
 		// 再从原文件夹表中删除子文件夹（软删除）
 		if err := removeSubfolder(tx, userId, parentPath); err != nil {
@@ -346,6 +350,9 @@ func RecoverBinFolder(userId, binId uint) error {
 		}
 
 		// 更新所有子文件的路径
+		if err := updateSubFilesPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("UpdateSubFilesState: %w", err)
+		}
 
 		// 从 bins 和 folder_bins 表中删除相应记录
 		// 删除 bins 表中的记录
