@@ -246,3 +246,12 @@ func SetFolderFavorite(userID, folderID uint, isFavorite bool) error {
 		return nil
 	})
 }
+
+func GetAllFavorFolders(userID uint) ([]models.FolderData, error) {
+	// var favorFolders []models.FolderData
+	favorFolders, err := models.GetAllFavorFolders(userID)
+	if err != nil {
+		return nil, err
+	}
+	return favorFolders, nil
+}

@@ -262,7 +262,8 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 // }
 
 func (receiver FileController) GetFileData(c *gin.Context) {
-
+	jwtPayload, _ := c.Get("jwt_payload")
+	fmt.Println(jwtPayload)
 	account := c.Query("account")
 	fileID := c.Query("file_id")
 
@@ -371,6 +372,34 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
 		req.Account, req.FileId, favoriteStatus))
+}
+
+func (receiver FileController) GetFavorFiles(c *gin.Context) {
+
+	account := c.Query("account")
+
+	if account == "" {
+		log.Printf("from %s 查询收藏文件提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	favorFiles, err := services.GetAllFavorFiles(userID)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", favorFiles)
 }
 
 type deleteOrRecoverFilejson struct {

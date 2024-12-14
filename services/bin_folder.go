@@ -327,6 +327,18 @@ func RecoverBinFolder(userId, binId uint) error {
 			}
 		}
 
+		// 恢复子文件
+		var subFiles []models.FileData
+		if err := tx.Model(&models.FileData{}).Unscoped().Where("path LIKE ? AND belong_to = ?", strings.ReplaceAll(
+			strings.TrimSpace(folder.Path), "\\", "/")+"/%", userId).Find(&subFiles).Error; err != nil {
+			return err
+		}
+		for _, subFile := range subFiles {
+			if err := tx.Unscoped().Model(&subFile).Update("deleted_at", nil).Error; err != nil {
+				return err
+			}
+		}
+
 		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
 		newFolderName, _ := SplitBinTimestamp(folder.FolderName)
 

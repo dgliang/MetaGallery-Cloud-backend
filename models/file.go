@@ -182,6 +182,15 @@ func CancelFileFavorite(fileID uint) {
 	DataBase.Save(&file)
 }
 
+func SearchAllFavorFile(userID uint) ([]FileData, error) {
+	var favorFiles []FileData
+	err := DataBase.Model(&FileData{}).Where("belong_to = ? and favorite = ?", userID, true).Find(&favorFiles).Error
+	if err != nil {
+		return nil, err
+	}
+	return favorFiles, nil
+}
+
 func RemoveFile(fileID uint) error {
 	err := DataBase.Model(&FileData{}).Delete(&FileData{ID: fileID}).Error
 	return err

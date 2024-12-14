@@ -90,6 +90,7 @@ func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
 	return nil
 }
 
+// 获取一个文件的详细信息
 func GetFileDetail(fileID uint) (models.FileData, error) {
 	fileData, err := models.GetFileData(fileID)
 	if err != nil {
@@ -161,6 +162,28 @@ func GetSubFiles(parentFolderID uint) ([]models.FileBrief, error) {
 	return fileBriefs, nil
 }
 
+func GetAllFavorFiles(userID uint) ([]models.FileBrief, error) {
+	favorFileData, err := models.SearchAllFavorFile(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var fileBriefs []models.FileBrief
+
+	for _, source := range favorFileData {
+		destination := models.FileBrief{
+			ID:       source.ID,
+			FileName: source.FileName,
+			FileType: source.FileType,
+			Favorite: source.Favorite,
+			Share:    source.Share,
+			InBin:    source.DeletedAt.Time,
+		}
+		fileBriefs = append(fileBriefs, destination)
+	}
+	return fileBriefs, nil
+}
+
 // 批量更新文件路径
 func updateSubFilesPaths(tx *gorm.DB, userId uint, oldPath, newPath string) error {
 	// 获取所有直接子文件夹
@@ -218,27 +241,27 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 }
 
 // 将被移出回收站内的文件夹的子文件软删除标记去除
-func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
-	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
-
-	var subFiles []models.FileData
-	if err := tx.Model(models.FileData{}).Where("path LIKE ? AND belong_to = ?", parentPath+"%", userId).
-		Find(&subFiles).Error; err != nil {
-		return fmt.Errorf("RecoverSubFiles Error: %w", err)
-	}
-
-	log.Println("路径：" + parentPath)
-	log.Println("影响文件:" + strconv.Itoa(len(subFiles)))
-
-	// 遍历子文件进行恢复
-	for _, file := range subFiles {
-		if err := models.RecoverFile(file.ID); err != nil {
-			return fmt.Errorf("RecoverSubFiles error: %w", err)
-		}
-	}
-
-	return nil
-}
+// func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
+// 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
+//
+// 	var subFiles []models.FileData
+// 	if err := tx.Model(models.FileData{}).Where("path LIKE ? AND belong_to = ?", parentPath+"%", userId).
+// 		Find(&subFiles).Error; err != nil {
+// 		return fmt.Errorf("RecoverSubFiles Error: %w", err)
+// 	}
+//
+// 	log.Println("路径：" + parentPath)
+// 	log.Println("影响文件:" + strconv.Itoa(len(subFiles)))
+//
+// 	// 遍历子文件进行恢复
+// 	for _, file := range subFiles {
+// 		if err := models.RecoverFile(file.ID); err != nil {
+// 			return fmt.Errorf("RecoverSubFiles error: %w", err)
+// 		}
+// 	}
+//
+// 	return nil
+// }
 
 // 将文件移入回收站
 func RemoveFile(fileID uint) error {

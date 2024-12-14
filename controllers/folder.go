@@ -4,6 +4,7 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -389,4 +390,31 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
 		req.Account, req.FolderId, favoriteStatus))
+}
+
+func (receiver FolderController) GetAllFavoriteFolders(c *gin.Context) {
+	account := c.Query("account")
+	if account == "" {
+		log.Printf("from %s 查询收藏文件夹提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	favorFolders, err := services.GetAllFavorFiles(userID)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", favorFolders)
+
 }

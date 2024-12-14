@@ -51,7 +51,7 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 
 		// 将 Token 信息存储到上下文中，便于后续处理
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			c.Set("payload", claims["payload"])
+			c.Set("jwt_payload", claims["payload"])
 		} else {
 			controllers.ReturnServerError(c, "存储 jwt token 到上下文失败")
 			c.Abort()
