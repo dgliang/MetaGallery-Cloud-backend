@@ -191,6 +191,16 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 	// 将 uint64 转为 uint
 	uintFID := uint(FID)
 
+	Belongto := services.IsFileBelongto(userID, uintFID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	if err := services.RenameFile(userID, uintFID, newFileName); err != nil {
 		ReturnError(c, "FAILED", "重命名失败:"+err.Error())
 		return
@@ -237,7 +247,7 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 		return
 	}
 
-	subfiles, err := models.GetSubFiles(uintFID)
+	subfiles, err := services.GetSubFiles(uintFID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -252,7 +262,8 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 // }
 
 func (receiver FileController) GetFileData(c *gin.Context) {
-
+	jwtPayload, _ := c.Get("jwt_payload")
+	fmt.Println(jwtPayload)
 	account := c.Query("account")
 	fileID := c.Query("file_id")
 
@@ -284,7 +295,7 @@ func (receiver FileController) GetFileData(c *gin.Context) {
 	}
 	uintFID := uint(FID)
 
-	fileData, err := models.GetFileData(uintFID)
+	fileData, err := services.GetFileDetail(uintFID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -332,6 +343,16 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 		return
 	}
 
+	Belongto := services.IsFileBelongto(userID, req.FileId)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	fileData, err1 := models.GetFileData(req.FileId)
 	if err1 != nil {
 		ReturnServerError(c, "GetFileData: "+err1.Error())
@@ -351,6 +372,34 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
 		req.Account, req.FileId, favoriteStatus))
+}
+
+func (receiver FileController) GetFavorFiles(c *gin.Context) {
+
+	account := c.Query("account")
+
+	if account == "" {
+		log.Printf("from %s 查询收藏文件提供的账号不全\n", c.Request.Host)
+		ReturnError(c, "FAILED", "账号不能为空")
+		return
+	}
+	userID, err := models.GetUserID(account)
+	if err != nil {
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	favorFiles, err := services.GetAllFavorFiles(userID)
+	if err != nil {
+		ReturnServerError(c, err.Error())
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", favorFiles)
 }
 
 type deleteOrRecoverFilejson struct {
@@ -388,8 +437,19 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 		return
 	}
 
+	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	if err := services.RemoveFile(req.Fileid); err != nil {
 		ReturnError(c, "FAILED", err.Error())
+		return
 	}
 
 	ReturnSuccess(c, "SUCCESS", "文件移入回收站成功", nil)
@@ -452,13 +512,23 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 		return
 	}
 
+	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	if err := services.RecoverFile(userID, req.Fileid); err != nil {
 		ReturnError(c, "FAILED", err.Error())
 	}
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
 }
 
-func (receiver FileController) ReallyDeleteFile(c *gin.Context) {
+func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 
 	var req deleteOrRecoverFilejson
 
@@ -478,9 +548,29 @@ func (receiver FileController) ReallyDeleteFile(c *gin.Context) {
 		return
 	}
 
-	err := services.ReallyDeleteFile(req.Fileid)
+	userID, err := models.GetUserID(req.Account)
 	if err != nil {
-		ReturnError(c, "FAILED", err.Error())
+		ReturnServerError(c, "获取 GetUserID: "+err.Error())
+		return
+	}
+	if userID == 0 {
+		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
+	err2 := services.ActuallyDeleteFile(req.Fileid)
+	if err2 != nil {
+		ReturnError(c, "FAILED", err2.Error())
 	}
 	ReturnSuccess(c, "SUCCESS", "文件彻底删除成功", nil)
 }
@@ -517,10 +607,18 @@ func (receiver FileController) PreviewFile(c *gin.Context) {
 	}
 	uintFID := uint(FID)
 
-	err2 := services.GetPreview(c, uintFID)
+	// err2 := services.GetPreview(c, uintFID)
+	// if err2 != nil {
+	// 	log.Printf("生成预览失败 ：%s", err2)
+	// 	ReturnError(c, "FAILED", err2.Error())
+	// 	return
+	// }
+
+	fileURL, err2 := services.GetPreviewURL(c, uintFID)
 	if err2 != nil {
-		log.Printf("生成预览失败 ：%s", err2)
+		log.Printf("获取预览失败 ：%s", err2)
 		ReturnError(c, "FAILED", err2.Error())
 		return
 	}
+	ReturnSuccess(c, "SUCCESS", fileURL)
 }

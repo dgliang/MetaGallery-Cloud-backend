@@ -29,6 +29,7 @@ func Router(r *gin.Engine) {
 		api.GET("/loadFolder/getChildrenInfo", controllers.FolderController{}.GetChildFolders)
 		api.POST("/renameFolder", controllers.FolderController{}.RenameFolder)
 		api.POST("/favoriteFolder", controllers.FolderController{}.FavoriteFolder)
+		api.POST("/getFavoriteFolder", controllers.FolderController{}.GetAllFavoriteFolders)
 		api.GET("/loadFolder/getFolderInfo", controllers.FolderController{}.GetFolderInfo)
 		api.DELETE("/removeFolder", controllers.BinController{}.RemoveFolder)
 		api.DELETE("/deleteFolder", controllers.BinController{}.DeleteFolder)
@@ -40,14 +41,15 @@ func Router(r *gin.Engine) {
 		api.POST("/uploadFile", controllers.FileController{}.UploadFile)
 		api.POST("/renameFile", controllers.FileController{}.RenameFile)
 		api.POST("/favoriteFile", controllers.FileController{}.FavoriteFile)
+		api.GET("/getFavoriteFile", controllers.FileController{}.GetFavorFiles)
 		api.GET("/loadFolder/getSubFileinfo", controllers.FileController{}.GetSubFiles)
-		api.GET("/getFileData", controllers.FileController{}.GetFileData)
+		api.GET("/getFileData", middlewares.ResourceAccessAuthMiddleWare(), controllers.FileController{}.GetFileData)
 		api.DELETE("/removeFile", controllers.FileController{}.RemoveFile)
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
-		api.DELETE("/deleteFile", controllers.FileController{}.ReallyDeleteFile)
-		api.GET("/downloadFile", controllers.FileController{}.DownloadFile)
-		api.GET("/previewFile", controllers.FileController{}.PreviewFile)
+		api.DELETE("/deleteFile", controllers.FileController{}.ActuallyDeleteFile)
+		api.GET("/downloadFile", middlewares.ResourceAccessAuthMiddleWare(), controllers.FileController{}.DownloadFile)
+		api.GET("/previewFile", middlewares.ResourceAccessAuthMiddleWare(), controllers.FileController{}.PreviewFile)
 
 		// 画廊管理
 		api.POST("/gallery/unshareFolder", controllers.FolderShareController{}.SetFolderUnShared)
@@ -59,5 +61,7 @@ func Router(r *gin.Engine) {
 		// 查询管理
 		api.GET("/search/listFilesAndFolders", controllers.SearchController{}.SearchFilesAndFolders)
 		api.GET("/search/listBinFilesAndFolders", controllers.SearchController{}.SearchBinFilesAndFolders)
+		api.GET("/search/favorFilesAndFolders", controllers.SearchController{}.SearchFavoriteFilesAndFolders)
+		// SearchFavoriteFilesAndFolders
 	}
 }

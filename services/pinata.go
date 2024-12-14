@@ -18,12 +18,6 @@ import (
 func UploadFileToIPFS(filePath string) (string, error) {
 	url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
-	// 对 filepath 进行预处理
-	// workingDir, _ := os.Getwd()
-	// workingDir = strings.ReplaceAll(workingDir, "\\", "/")
-	// log.Printf("Working directory: %s", workingDir)
-	// filePath = strings.ReplaceAll(filePath, "\\", "/")
-
 	abosultePath := path.Join(config.FileResPath, filePath)
 	log.Printf("Absolute path: %s", abosultePath)
 
@@ -43,12 +37,6 @@ func UploadFileToIPFS(filePath string) (string, error) {
 		return "", err
 	}
 	io.Copy(part, file)
-
-	// // 添加元数据字段
-	// writer.WriteField("pinataMetadata", `{"name": "Pinnie.json"}`)
-
-	// // 添加选项字段
-	// writer.WriteField("pinataOptions", `{"cidVersion": 1}`)
 
 	// 关闭 writer，完成请求体构建
 	writer.Close()
@@ -100,12 +88,6 @@ func UploadJsonToIPFS(jsonData map[string]interface{}) (string, error) {
 	url := "https://api.pinata.cloud/pinning/pinJSONToIPFS"
 
 	payloadData := map[string]interface{}{
-		// "pinataOptions": map[string]interface{}{
-		// 	"cidVersion": 1,
-		// },
-		// "pinataMetadata": map[string]interface{}{
-		// 	"name": "pinnie.json",
-		// },
 		"pinataContent": jsonData,
 	}
 

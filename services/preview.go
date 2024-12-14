@@ -33,11 +33,29 @@ func GetPreview(c *gin.Context, fileID uint) error {
 		return pngPreview(c, fullFilePath)
 	case ".gif":
 		return gifPreview(c, fullFilePath)
-		// case ".bmp":
-		// 	return bmpPreview(c, fullFilePath)
 	}
 
 	return fmt.Errorf("该格式不支持预览")
+}
+
+func GetPreviewURL(c *gin.Context, fileID uint) (string, error) {
+	fileData, err := models.GetFileData(fileID)
+	if err != nil {
+		return "", err
+	}
+	if fileData.ID == 0 {
+		return "", fmt.Errorf("ID not exists")
+	}
+
+	filePath := fileData.Path
+	fullFilePath := path.Join(config.FileResPath, filePath)
+
+	switch fileData.FileType {
+	case ".jpg", ".jpeg", ".png", ".gif", ".pdf":
+		return DerectlyReturnFileURL(fullFilePath)
+	}
+
+	return "", fmt.Errorf("该格式不支持预览")
 }
 
 func gifPreview(c *gin.Context, fullFilePath string) error {
@@ -113,27 +131,9 @@ func pngPreview(c *gin.Context, fullFilePath string) error {
 	return nil
 }
 
-// func bmpPreview(c *gin.Context, fullFilePath string) error {
-// 	file, err := os.Open(fullFilePath)
-// 	if err != nil {
+func DerectlyReturnFileURL(fullFilePath string) (string, error) {
 
-// 		return err
-// 	}
-// 	defer file.Close()
-// 	// log.Println("open file success")
-// 	// 解码bmp图片
-// 	img, err := bmp.Decode(file)
-// 	if err != nil {
+	fileURL := path.Join(hostUrl, fullFilePath)
 
-// 		return err
-// 	}
-
-// 	// 调整图片大小
-// 	previewIMG := resize.Resize(512, 0, img, resize.Lanczos3) // 100表示宽度，高度设为0表示按比例调整
-
-// 	// fmt.Println("缩略图已生成：thumbnail.png")
-// 	c.Header("Content-Type", "image/bmp")
-// 	png.Encode(c.Writer, previewIMG)
-
-// 	return nil
-// }
+	return fileURL, nil
+}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"path"
 	"strconv"
 	"strings"
@@ -10,9 +11,9 @@ import (
 )
 
 type FileData struct {
-	ID             uint `gorm:"primaryKey;index;not null;"`
-	BelongTo       uint
-	FileName       string `gorm:"type:varchar(256); not null;"`
+	ID             uint   `gorm:"primaryKey;index;not null;"`
+	BelongTo       uint   `gorm:"index"`
+	FileName       string `gorm:"type:varchar(256); not null; index ;"`
 	FileType       string `gorm:"type:varchar(64); not null;"`
 	ParentFolderID uint
 	Path           string
@@ -138,7 +139,7 @@ func GetFileID(userId, parentId uint, fileName string) (uint, error) {
 func GetFileData(fileID uint) (FileData, error) {
 	var fileData FileData
 	// 预加载
-	DataBase.Preload("User").Preload("ParentFolder").Model(&FileData{ID: fileID}).Where("id = ?", fileID).Find(&fileData)
+	DataBase.Preload("ParentFolder").Model(&FileData{ID: fileID}).Where("id = ?", fileID).Find(&fileData)
 
 	return fileData, nil
 }
@@ -151,26 +152,13 @@ func GetDeletedFileData(fileID uint) (FileData, error) {
 	return fileData, nil
 }
 
-func GetSubFiles(parentFolderID uint) ([]FileBrief, error) {
+func GetSubFiles(parentFolderID uint) ([]FileData, error) {
 	var subFiles []FileData
 
-	DataBase.Set("gorm:auto_preload", false).Model(&FileData{}).Where("parent_folder_id = ?", parentFolderID).Find(&subFiles)
-
-	var fileBriefs []FileBrief
-
-	for _, source := range subFiles {
-		destination := FileBrief{
-			ID:       source.ID,
-			FileName: source.FileName,
-			FileType: source.FileType,
-			Favorite: source.Favorite,
-			Share:    source.Share,
-			InBin:    source.DeletedAt.Time,
-		}
-		fileBriefs = append(fileBriefs, destination)
+	if err := DataBase.Set("gorm:auto_preload", false).Model(&FileData{}).Where("parent_folder_id = ?", parentFolderID).Find(&subFiles).Error; err != nil {
+		return nil, err
 	}
-
-	return fileBriefs, nil
+	return subFiles, nil
 }
 
 func GetSubFileDatas(parentFolderID uint) ([]FileData, error) {
@@ -192,6 +180,15 @@ func CancelFileFavorite(fileID uint) {
 	DataBase.Model(&FileData{}).Where("id = ?", fileID).Find(&file)
 	file.Favorite = false
 	DataBase.Save(&file)
+}
+
+func SearchAllFavorFile(userID uint) ([]FileData, error) {
+	var favorFiles []FileData
+	err := DataBase.Model(&FileData{}).Where("belong_to = ? and favorite = ?", userID, true).Find(&favorFiles).Error
+	if err != nil {
+		return nil, err
+	}
+	return favorFiles, nil
 }
 
 func RemoveFile(fileID uint) error {
@@ -224,4 +221,22 @@ func GetBinFiles(userID uint) ([]FileBrief, error) {
 func RecoverFile(fileID uint) error {
 	err := DataBase.Model(&FileData{}).Unscoped().Where("id = ?", fileID).Update("deleted_at", nil).Error
 	return err
+}
+
+func SearchFile(userID uint, pattern string) ([]FileData, error) {
+	var fileDatas []FileData
+	err := DataBase.Model(&FileData{}).Where("belong_to = ? and file_name LIKE ?", userID, "%"+pattern+"%").Find(&fileDatas)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error.Error())
+	}
+	return fileDatas, nil
+}
+
+func SearchFavorFile(userID uint, pattern string) ([]FileData, error) {
+	var fileDatas []FileData
+	err := DataBase.Model(&FileData{}).Where("belong_to = ? and favorite = 1 and file_name LIKE ?", userID, "%"+pattern+"%").Find(&fileDatas)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error.Error())
+	}
+	return fileDatas, nil
 }

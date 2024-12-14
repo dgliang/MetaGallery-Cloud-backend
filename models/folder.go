@@ -114,3 +114,12 @@ func GetBinFolderDataByID(folderId uint) (FolderData, error) {
 	}
 	return folder, nil
 }
+
+func GetAllFavorFolders(userID uint) ([]FolderData, error) {
+	var favorFolders []FolderData
+	err := DataBase.Model(&FolderData{}).Where("belong_to = ? and favorite = ?", userID, true).Find(&favorFolders).Error
+	if err != nil {
+		return nil, err
+	}
+	return favorFolders, nil
+}

@@ -64,6 +64,9 @@ func RemoveFolder(userId, folderID uint) error {
 		}
 
 		// 更新所有子文件的路径
+		if err := updateSubFilesPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("UpdateSubFilesState: %w", err)
+		}
 
 		// 将文件夹数据插入到回收站表 Bin
 		bin := models.Bin{
@@ -85,8 +88,9 @@ func RemoveFolder(userId, folderID uint) error {
 		}
 
 		parentPath := folder.Path + "/"
+		fmt.Println("parentPath" + parentPath)
 		// 先软删除文件
-		if err := removeSubFiles(tx, userId, parentPath); err != nil {
+		if err := removeSubFiles(tx, userId, newPath); err != nil {
 			return err
 		}
 
@@ -116,25 +120,6 @@ func removeSubfolder(tx *gorm.DB, userId uint, parentPath string) error {
 
 	// 遍历子文件夹并进行软删除
 	for _, subFolder := range subFolders {
-		//// 将文件夹数据插入到回收站表 Bin
-		//subBin := models.Bin{
-		//	Type:        models.FOLDER,
-		//	DeletedTime: deleteTime,
-		//	UserID:      userId,
-		//}
-		//if err := tx.Create(&subBin).Error; err != nil {
-		//	return err
-		//}
-		//
-		//// 在 FolderBin 表中记录文件夹与回收站的关联
-		//subFolderBin := models.FolderBin{
-		//	FolderID: subFolder.ID,
-		//	BinID:    subBin.ID,
-		//}
-		//if err := tx.Create(&subFolderBin).Error; err != nil {
-		//	return err
-		//}
-
 		// 从原文件夹表中删除（软删除）
 		if err := tx.Delete(&subFolder).Error; err != nil {
 			return err
@@ -322,6 +307,18 @@ func RecoverBinFolder(userId, binId uint) error {
 			}
 		}
 
+		// 恢复子文件
+		var subFiles []models.FileData
+		if err := tx.Model(&models.FileData{}).Unscoped().Where("path LIKE ? AND belong_to = ?", strings.ReplaceAll(
+			strings.TrimSpace(folder.Path), "\\", "/")+"/%", userId).Find(&subFiles).Error; err != nil {
+			return err
+		}
+		for _, subFile := range subFiles {
+			if err := tx.Unscoped().Model(&subFile).Update("deleted_at", nil).Error; err != nil {
+				return err
+			}
+		}
+
 		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
 		newFolderName, _ := SplitBinTimestamp(folder.FolderName)
 
@@ -360,6 +357,9 @@ func RecoverBinFolder(userId, binId uint) error {
 		}
 
 		// 更新所有子文件的路径
+		if err := updateSubFilesPaths(tx, userId, oldPath, newPath); err != nil {
+			return fmt.Errorf("UpdateSubFilesState: %w", err)
+		}
 
 		// 从 bins 和 folder_bins 表中删除相应记录
 		// 删除 bins 表中的记录

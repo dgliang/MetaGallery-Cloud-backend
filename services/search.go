@@ -10,7 +10,7 @@ type searchResponse struct {
 	Result interface{} `json:"result"`
 }
 
-type searchNormalesponse struct {
+type searchNormalResponse struct {
 	Type       string `json:"type"`
 	ID         uint   `json:"id"`
 	UserID     uint   `json:"user_id"`
@@ -32,9 +32,17 @@ type searchBinResponse struct {
 	DelTime    time.Time `json:"del_time"`
 }
 
+type searchFavorResponse struct {
+	Type   string `json:"type"`
+	ID     uint   `json:"id"`
+	UserID uint   `json:"user_id"`
+	Name   string `json:"name"`
+	Path   string `json:"path"`
+}
+
 func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchResponse, error) {
 	// 使用 UNION 进行查询
-	var result []searchNormalesponse
+	var result []searchNormalResponse
 
 	err := models.DataBase.Raw(`
 		(SELECT 
@@ -128,5 +136,64 @@ func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, erro
 
 	return searchResponse{
 		Result: result,
+	}, nil
+}
+
+func SearchFavoriteFilesAndFolders(userID uint, pattern string, pageNum int) (searchResponse, error) {
+	favorFiles, err := models.SearchAllFavorFile(userID)
+	if err != nil {
+		return searchResponse{}, err
+	}
+
+	favorFolders, err := models.GetAllFavorFolders(userID)
+	if err != nil {
+		return searchResponse{}, err
+	}
+
+	// var response searchResponse
+
+	var favorResponses []searchFavorResponse
+	// var folderFavorResponsess []searchFavorResponse
+
+	for _, File := range favorFiles {
+		if strings.Contains(File.FileName, pattern) {
+			path := File.Path
+			dirParts := strings.Split(path, "/")
+			dirParts[len(dirParts)-1] = File.FileName
+			newPath := strings.Join(dirParts[2:], "/")
+
+			File.Path = newPath
+			favorResponse := searchFavorResponse{
+				Type:   "FILE",
+				ID:     File.ID,
+				UserID: userID,
+				Name:   File.FileName,
+				Path:   File.Path,
+			}
+			favorResponses = append(favorResponses, favorResponse)
+		}
+	}
+
+	for _, Folder := range favorFolders {
+		if strings.Contains(Folder.FolderName, pattern) {
+			path := Folder.Path
+			dirParts := strings.Split(path, "/")
+			// dirParts[len(dirParts)-1] = File.FileName
+			newPath := strings.Join(dirParts[2:], "/")
+
+			Folder.Path = newPath
+			favorResponse := searchFavorResponse{
+				Type:   "FOLDER",
+				ID:     Folder.ID,
+				UserID: userID,
+				Name:   Folder.FolderName,
+				Path:   Folder.Path,
+			}
+			favorResponses = append(favorResponses, favorResponse)
+		}
+	}
+
+	return searchResponse{
+		Result: favorResponses,
 	}, nil
 }
