@@ -17,12 +17,12 @@ const (
 )
 
 type sharedFolderResponse struct {
-	OwnerAccount string `json:"owner_account"`
-	FolderName   string `json:"folder_name"`
-	IPFSHash     string `json:"ipfs_hash"`
-	Intro        string `json:"intro"`
-	PinDate      string `json:"pin_date"`
-	TotalPage    int    `json:"total_page"`
+	OwnerAccount UserInfo `json:"owner_account"`
+	FolderName   string   `json:"folder_name"`
+	IPFSHash     string   `json:"ipfs_hash"`
+	Intro        string   `json:"intro"`
+	PinDate      string   `json:"pin_date"`
+	TotalPage    int      `json:"total_page"`
 }
 
 // 获取用户自己共享的所有文件夹列表
@@ -90,15 +90,23 @@ func ListAllSharedFolders(pageNum int) ([]sharedFolderResponse, error) {
 func matchSharedFolderModelToResponse(folders []models.SharedFolder, totalPage int) []sharedFolderResponse {
 	var res []sharedFolderResponse
 	for _, folder := range folders {
-		ownerAccount, _ := models.GetUserAccountById(folder.OwnerID)
+		var ownerAccount models.UserData
+		if err := models.DataBase.Where("id = ?", folder.OwnerID).First(&ownerAccount).Error; err != nil {
+			return nil
+		}
 
 		res = append(res, sharedFolderResponse{
-			OwnerAccount: ownerAccount,
-			FolderName:   folder.SharedName,
-			IPFSHash:     folder.IPFSHash,
-			Intro:        folder.Intro,
-			PinDate:      folder.CreatedAt.Format("2006-01-02 15:04:05"),
-			TotalPage:    totalPage,
+			OwnerAccount: UserInfo{
+				Account: ownerAccount.Account,
+				Name:    ownerAccount.UserName,
+				Intro:   ownerAccount.BriefIntro,
+				Avatar:  ownerAccount.ProfilePhoto,
+			},
+			FolderName: folder.SharedName,
+			IPFSHash:   folder.IPFSHash,
+			Intro:      folder.Intro,
+			PinDate:    folder.CreatedAt.Format("2006-01-02 15:04:05"),
+			TotalPage:  totalPage,
 		})
 	}
 	return res

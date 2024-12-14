@@ -71,3 +71,10 @@ func RandomUsername(account string) (string, error) {
 	userName := "MGC" + prefix + string(randomSuffix)
 	return userName, nil
 }
+
+type UserInfo struct {
+	Account string `json:"account"`
+	Name    string `json:"name"`
+	Intro   string `json:"intro"`
+	Avatar  string `json:"avatar"`
+}
