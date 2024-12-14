@@ -1,8 +1,15 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"errors"
+	"io"
+	"net/http"
+	"os"
+	"path"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -102,7 +109,15 @@ type sharedFolderInfoResponse struct {
 	FolderInfo   folder `json:"folder_info"`
 }
 
-func GetSharedFolderInfo(ownerAccount, cid string) (sharedFolderInfoResponse, error) {
+func GetSharedFolderByIPFSHash(owerId uint, cid string) (models.SharedFolder, error) {
+	var sharedFolder models.SharedFolder
+	if err := models.DataBase.Where("owner_id = ? AND ipfs_hash = ?", owerId, cid).First(&sharedFolder).Error; err != nil {
+		return sharedFolder, err
+	}
+	return sharedFolder, nil
+}
+
+func GetSharedFolderInfoFromIPFS(ownerAccount, cid string) (sharedFolderInfoResponse, error) {
 	var sharedFolderInfo sharedFolderInfoResponse
 
 	folderData, err := GetFolderJsonFromIPFS(cid)
@@ -115,4 +130,38 @@ func GetSharedFolderInfo(ownerAccount, cid string) (sharedFolderInfoResponse, er
 		FolderInfo:   folderData,
 	}
 	return sharedFolderInfo, nil
+}
+
+// 从 IPFS 远程通过 url 下载文件，同时采用本地缓存的机制减少重复下载
+func DownloadSharedFile(c *gin.Context, ipfsHash string) error {
+	url := GenerateIPFSUrl(ipfsHash)
+
+	cacheFilePath := path.Join(config.CacheResPath, ipfsHash)
+
+	// 检查本地缓存文件是否存在
+	if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
+		// 如果文件不存在，从 IPFS 下载文件
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		// 创建本地缓存文件
+		file, err := os.Create(cacheFilePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		// 将远程文件内容写入本地缓存文件
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 返回本地缓存文件给客户端
+	c.File(cacheFilePath)
+	return nil
 }

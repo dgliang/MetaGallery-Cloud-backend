@@ -86,11 +86,40 @@ func (s FolderShareController) GetFolderInfo(c *gin.Context) {
 		return
 	}
 
-	res, err := services.GetSharedFolderInfo(ownerAccount, ipfsHash)
+	res, err := services.GetSharedFolderInfoFromIPFS(ownerAccount, ipfsHash)
 	if err != nil {
 		ReturnServerError(c, "获取共享文件夹信息失败"+err.Error())
 		return
 	}
 
 	ReturnSuccess(c, "SUCCESS", "", res)
+}
+
+func (s FolderShareController) DownloadSharedFile(c *gin.Context) {
+	account := c.Query("account")
+	ipfsHash := c.Query("ipfs_hash")
+
+	if account == "" || ipfsHash == "" {
+		ReturnError(c, "FAILED", "account, ipfs_hash 字段不能为空")
+		return
+	}
+
+	userId, err := models.GetUserID(account)
+	if err != nil || userId == 0 {
+		ReturnError(c, "FAILED", "获取用户ID失败，用户不存在")
+		return
+	}
+
+	sharedFolder, err := services.GetSharedFolderByIPFSHash(userId, ipfsHash)
+	if err == nil && sharedFolder.ID != 0 {
+		ReturnError(c, "FAILED", "要下载的是共享文件夹而不是共享文件，不支持下载共享文件夹")
+		return
+	}
+
+	// 从缓存文件中获取共享文件数据并传送给前端
+	err = services.DownloadSharedFile(c, ipfsHash)
+	if err != nil {
+		ReturnServerError(c, "下载共享文件失败"+err.Error())
+		return
+	}
 }
