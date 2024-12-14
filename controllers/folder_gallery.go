@@ -80,12 +80,6 @@ func (s FolderShareController) GetFolderInfo(c *gin.Context) {
 		return
 	}
 
-	sharedFolder, err := services.GetSharedFolderByOwnerAndName(userId, folderName)
-	if err != nil || sharedFolder.ID == 0 {
-		ReturnError(c, "FAILED", "要删除的共享文件夹不存在")
-		return
-	}
-
 	res, err := services.GetSharedFolderInfoFromIPFS(ownerAccount, ipfsHash)
 	if err != nil {
 		ReturnServerError(c, "获取共享文件夹信息失败"+err.Error())
@@ -97,10 +91,11 @@ func (s FolderShareController) GetFolderInfo(c *gin.Context) {
 
 func (s FolderShareController) DownloadSharedFile(c *gin.Context) {
 	account := c.Query("account")
+	fileName := c.Query("file_name")
 	ipfsHash := c.Query("ipfs_hash")
 
-	if account == "" || ipfsHash == "" {
-		ReturnError(c, "FAILED", "account, ipfs_hash 字段不能为空")
+	if account == "" || fileName == "" || ipfsHash == "" {
+		ReturnError(c, "FAILED", "account, file_name, ipfs_hash 字段不能为空")
 		return
 	}
 
@@ -117,7 +112,7 @@ func (s FolderShareController) DownloadSharedFile(c *gin.Context) {
 	}
 
 	// 从缓存文件中获取共享文件数据并传送给前端
-	err = services.DownloadSharedFile(c, ipfsHash)
+	err = services.DownloadSharedFile(c, fileName, ipfsHash)
 	if err != nil {
 		ReturnServerError(c, "下载共享文件失败"+err.Error())
 		return

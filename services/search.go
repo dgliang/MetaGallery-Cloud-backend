@@ -18,7 +18,6 @@ type searchNormalesponse struct {
 	Path       string `json:"path"`
 	IsFavorite bool   `json:"is_favorite"`
 	IsShared   bool   `json:"is_shared"`
-	IPFSHash   string `json:"ipfs_hash"`
 }
 
 type searchBinResponse struct {
@@ -30,7 +29,6 @@ type searchBinResponse struct {
 	Path       string    `json:"path"`
 	IsFavorite bool      `json:"is_favorite"`
 	IsShared   bool      `json:"is_shared"`
-	IPFSHash   string    `json:"ipfs_hash"`
 	DelTime    time.Time `json:"del_time"`
 }
 
@@ -46,7 +44,7 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchR
 			file_name AS name, 
 			path, 
 			favorite AS is_favorite, 
-			share AS is_shared, 
+			share AS is_shared
 		FROM file_data 
 		WHERE file_name LIKE ? AND belong_to = ? AND path LIKE ?)
 		UNION
@@ -57,11 +55,10 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchR
 			folder_name AS name, 
 			path, 
 			favorite AS is_favorite, 
-			share AS is_shared, 
+			share AS is_shared
 		FROM folder_data 
 		WHERE folder_name LIKE ? AND belong_to = ? AND path LIKE ?)
-	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%").
-		Scan(&result).Error
+	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%").Scan(&result).Error
 	if err != nil {
 		return searchResponse{}, err
 	}

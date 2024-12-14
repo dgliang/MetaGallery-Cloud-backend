@@ -141,10 +141,16 @@ func GetSharedFolderInfoFromIPFS(ownerAccount, cid string) (sharedFolderInfoResp
 }
 
 // 从 IPFS 远程通过 url 下载文件，同时采用本地缓存的机制减少重复下载
-func DownloadSharedFile(c *gin.Context, ipfsHash string) error {
+func DownloadSharedFile(c *gin.Context, fileName, ipfsHash string) error {
 	url := GenerateIPFSUrl(ipfsHash)
 
-	cacheFilePath := path.Join(config.CacheResPath, ipfsHash)
+	cacheFilePath := path.Join(config.CacheResPath, ipfsHash, fileName)
+
+	// 确保目录存在
+	cacheDir := path.Dir(cacheFilePath)
+	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
+		return err
+	}
 
 	// 检查本地缓存文件是否存在
 	if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {

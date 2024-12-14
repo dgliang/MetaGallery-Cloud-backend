@@ -19,12 +19,12 @@ func UploadFileToIPFS(filePath string) (string, error) {
 	url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
 	// 对 filepath 进行预处理
-	workingDir, _ := os.Getwd()
-	workingDir = strings.ReplaceAll(workingDir, "\\", "/")
-	log.Printf("Working directory: %s", workingDir)
-	filePath = strings.ReplaceAll(filePath, "\\", "/")
+	// workingDir, _ := os.Getwd()
+	// workingDir = strings.ReplaceAll(workingDir, "\\", "/")
+	// log.Printf("Working directory: %s", workingDir)
+	// filePath = strings.ReplaceAll(filePath, "\\", "/")
 
-	abosultePath := path.Join(workingDir, config.FileResPath, filePath)
+	abosultePath := path.Join(config.FileResPath, filePath)
 	log.Printf("Absolute path: %s", abosultePath)
 
 	// 创建一个 buffer 和 multipart writer
@@ -38,7 +38,7 @@ func UploadFileToIPFS(filePath string) (string, error) {
 	}
 	defer file.Close()
 
-	part, err := writer.CreateFormFile("file", abosultePath)
+	part, err := writer.CreateFormFile("file", path.Base(abosultePath))
 	if err != nil {
 		return "", err
 	}
@@ -208,12 +208,12 @@ func UnpinFromIPFS(CID string) error {
 
 type file struct {
 	FileName string `json:"file_name"`
-	IPFSHash string `json:"ipfs_hash"`
+	CID      string `json:"cid"`
 }
 
 type subFolder struct {
 	FolderName string `json:"folder_name"`
-	IPFSHash   string `json:"ipfs_hash"`
+	CID        string `json:"cid"`
 }
 
 type folder struct {
@@ -245,12 +245,12 @@ func GetFolderJsonFromIPFS(cid string) (folder, error) {
 	log.Printf("Folder Name: %s\n", folderData.FolderName)
 	log.Println("Files:")
 	for _, file := range folderData.Files {
-		log.Printf("- CID: %s, File Name: %s\n", file.IPFSHash, file.FileName)
+		log.Printf("- CID: %s, File Name: %s\n", file.CID, file.FileName)
 	}
 
 	log.Println("Subfolders:")
 	for _, subfolder := range folderData.SubFolders {
-		log.Printf("- CID: %s, SubFolder Name: %s\n", subfolder.IPFSHash, subfolder.FolderName)
+		log.Printf("- CID: %s, SubFolder Name: %s\n", subfolder.CID, subfolder.FolderName)
 	}
 	return folderData, nil
 }
