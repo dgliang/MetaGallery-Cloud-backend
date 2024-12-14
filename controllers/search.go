@@ -14,9 +14,8 @@ func (s SearchController) SearchFilesAndFolders(c *gin.Context) {
 	account := c.Query("account")
 	parentFolder := c.Query("parent_folder")
 	keyword := c.Query("keyword")
-	pageNumStr := c.Query("page_num")
 
-	if account == "" || parentFolder == "" || keyword == "" || pageNumStr == "" {
+	if account == "" || parentFolder == "" || keyword == "" {
 		ReturnError(c, "FAILED", "提供的参数不完整")
 		return
 	}
@@ -34,14 +33,8 @@ func (s SearchController) SearchFilesAndFolders(c *gin.Context) {
 		return
 	}
 
-	pageNum, _ := strconv.ParseInt(pageNumStr, 10, 64)
-	if pageNum <= 0 {
-		ReturnError(c, "FAILED", "页码必须大于 0 ")
-		return
-	}
-
 	// 根据参数查询文件和文件夹
-	res, err := services.SearchFilesAndFolders(userId, folderData.Path, keyword, int(pageNum))
+	res, err := services.SearchFilesAndFolders(userId, folderData.Path, keyword)
 	if err != nil {
 		ReturnServerError(c, "查询失败"+err.Error())
 		return
@@ -53,9 +46,8 @@ func (s SearchController) SearchFilesAndFolders(c *gin.Context) {
 func (s SearchController) SearchBinFilesAndFolders(c *gin.Context) {
 	account := c.Query("account")
 	keyword := c.Query("keyword")
-	pageNumStr := c.Query("page_num")
 
-	if account == "" || keyword == "" || pageNumStr == "" {
+	if account == "" || keyword == "" {
 		ReturnError(c, "FAILED", "提供的参数不完整")
 		return
 	}
@@ -66,14 +58,8 @@ func (s SearchController) SearchBinFilesAndFolders(c *gin.Context) {
 		return
 	}
 
-	pageNum, _ := strconv.ParseInt(pageNumStr, 10, 64)
-	if pageNum <= 0 {
-		ReturnError(c, "FAILED", "页码必须大于 0 ")
-		return
-	}
-
 	// 根据参数查询回收站的文件和文件夹
-	res, err := services.SearchBinFilesAndFolders(userId, keyword, int(pageNum))
+	res, err := services.SearchBinFilesAndFolders(userId, keyword)
 	if err != nil {
 		ReturnServerError(c, "查询失败"+err.Error())
 		return
