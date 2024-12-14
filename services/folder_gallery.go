@@ -21,6 +21,7 @@ type sharedFolderResponse struct {
 	FolderName   string   `json:"folder_name"`
 	IPFSHash     string   `json:"ipfs_hash"`
 	Intro        string   `json:"intro"`
+	CoverImg     string   `json:"cover_img"`
 	PinDate      string   `json:"pin_date"`
 	TotalPage    int      `json:"total_page"`
 }
@@ -105,6 +106,7 @@ func matchSharedFolderModelToResponse(folders []models.SharedFolder, totalPage i
 			FolderName: folder.SharedName,
 			IPFSHash:   folder.IPFSHash,
 			Intro:      folder.Intro,
+			CoverImg:   folder.CoverImg,
 			PinDate:    folder.CreatedAt.Format("2006-01-02 15:04:05"),
 			TotalPage:  totalPage,
 		})

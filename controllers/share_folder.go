@@ -1,10 +1,14 @@
 package controllers
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
+	"log"
+	"path"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +50,28 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		return
 	}
 
-	err = services.SetFolderShareState(userId, folderData.ID, true, sharedName, intro)
+	defaultUrl := config.HostURL + "/resources/img/cover_img/default.png"
+	file, err := c.FormFile("cover_img")
+	var savedUrl string
+
+	if err != nil {
+		savedUrl = defaultUrl
+		log.Print(savedUrl)
+	} else {
+		timestamp := time.Now().Unix()
+		fileName := fmt.Sprintf("%d_%s", timestamp, path.Base(file.Filename))
+		filePath := path.Join("./resources/img/cover_img", fileName)
+
+		if err := c.SaveUploadedFile(file, filePath); err != nil {
+			ReturnServerError(c, "保存封面图片文件失败")
+			return
+		}
+
+		savedUrl = config.HostURL + "/resources/img/cover_img/" + fileName
+		log.Print(savedUrl)
+	}
+
+	err = services.SetFolderShareState(userId, folderData.ID, true, sharedName, intro, savedUrl)
 	if err != nil {
 		ReturnServerError(c, "SetFolderShareState: "+err.Error())
 		return

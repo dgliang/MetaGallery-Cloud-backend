@@ -1,24 +1,16 @@
 package services
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var hostUrl = ""
-
-func init() {
-	godotenv.Load(".env")
-	hostUrl = os.Getenv("HOST_URL")
-}
 
 func IsValidAccount(s string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9]{4,9}$`)
@@ -49,7 +41,7 @@ func GetAvatarUrl(account string) (string, error) {
 	}
 
 	firstLetter := strings.ToUpper(string(account[0]))
-	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", hostUrl, firstLetter)
+	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", config.HostURL, firstLetter)
 	return avatarUrl, nil
 }
 
