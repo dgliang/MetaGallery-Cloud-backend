@@ -62,6 +62,6 @@ func Router(r *gin.Engine) {
 		api.GET("/search/listFilesAndFolders", controllers.SearchController{}.SearchFilesAndFolders)
 		api.GET("/search/listBinFilesAndFolders", controllers.SearchController{}.SearchBinFilesAndFolders)
 		api.GET("/search/favorFilesAndFolders", controllers.SearchController{}.SearchFavoriteFilesAndFolders)
-		// SearchFavoriteFilesAndFolders
+		api.GET("/search/gallery", controllers.SearchController{}.SearchSharedFolders)
 	}
 }

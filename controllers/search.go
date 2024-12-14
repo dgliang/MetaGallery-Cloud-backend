@@ -97,3 +97,22 @@ func (s SearchController) SearchFavoriteFilesAndFolders(c *gin.Context) {
 	}
 	ReturnSuccess(c, "SUCCESS", "", res)
 }
+
+func (s SearchController) SearchSharedFolders(c *gin.Context) {
+	keyword := c.Query("keyword")
+	pageNumStr := c.Query("page_num")
+
+	if keyword == "" || pageNumStr == "" {
+		ReturnError(c, "FAILED", "没有提供搜索关键词")
+		return
+	}
+
+	pageNum, _ := strconv.Atoi(pageNumStr)
+	res, err := services.SearchSharedFolders(keyword, pageNum)
+	if err != nil {
+		ReturnServerError(c, "搜索出错中断")
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", res)
+}

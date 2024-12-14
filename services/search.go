@@ -197,3 +197,27 @@ func SearchFavoriteFilesAndFolders(userID uint, pattern string, pageNum int) (se
 		Result: favorResponses,
 	}, nil
 }
+
+func SearchSharedFolders(keyword string, pageNum int) (searchResponse, error) {
+	var totalRecords int64
+	err := models.DataBase.Model(&models.SharedFolder{}).Where("shared_name LIKE ?",
+		keyword+"%").Count(&totalRecords).Error
+	if err != nil {
+		return searchResponse{}, err
+	}
+
+	totalPage := int((totalRecords + int64(PAGE_SIZE) - 1) / int64(PAGE_SIZE))
+
+	var sharedFolders []models.SharedFolder
+	err = models.DataBase.Where("shared_name LIKE ?", keyword+"%").Limit(PAGE_SIZE).
+		Offset((pageNum - 1) * PAGE_SIZE).Find(&sharedFolders).Error
+	if err != nil {
+		return searchResponse{}, err
+	}
+
+	res := searchResponse{
+		Result: matchSharedFolderModelToResponse(sharedFolders, totalPage),
+	}
+
+	return res, nil
+}
