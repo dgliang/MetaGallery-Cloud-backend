@@ -198,7 +198,7 @@ func SearchFavoriteFilesAndFolders(userID uint, pattern string, pageNum int) (se
 	}, nil
 }
 
-func SearchSharedFolders(keyword string, pageNum int) (searchResponse, error) {
+func SearchAllSharedFolders(keyword string, pageNum int) (searchResponse, error) {
 	var totalRecords int64
 	err := models.DataBase.Model(&models.SharedFolder{}).Where("shared_name LIKE ?",
 		keyword+"%").Count(&totalRecords).Error
@@ -220,4 +220,39 @@ func SearchSharedFolders(keyword string, pageNum int) (searchResponse, error) {
 	}
 
 	return res, nil
+}
+
+func SearchUserSharedFolders(userId uint, keyword string) (searchResponse, error) {
+	var sharedFolders []models.SharedFolder
+	err := models.DataBase.Where("shared_name LIKE ? AND owner_id = ?", keyword+"%", userId).
+		Find(&sharedFolders).Error
+	if err != nil {
+		return searchResponse{}, err
+	}
+
+	var res []interface{}
+	for _, folder := range sharedFolders {
+		var ownerAccount models.UserData
+		if err := models.DataBase.Where("id = ?", folder.OwnerID).First(&ownerAccount).Error; err != nil {
+			return searchResponse{}, err
+		}
+
+		res = append(res, struct {
+			FolderName string
+			IPFSHash   string
+			Intro      string
+			CoverImg   string
+			PinDate    string
+		}{
+			FolderName: folder.SharedName,
+			IPFSHash:   folder.IPFSHash,
+			Intro:      folder.Intro,
+			CoverImg:   folder.CoverImg,
+			PinDate:    folder.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return searchResponse{
+		Result: res,
+	}, nil
 }

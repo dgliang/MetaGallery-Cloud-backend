@@ -108,7 +108,31 @@ func (s SearchController) SearchSharedFolders(c *gin.Context) {
 	}
 
 	pageNum, _ := strconv.Atoi(pageNumStr)
-	res, err := services.SearchSharedFolders(keyword, pageNum)
+	res, err := services.SearchAllSharedFolders(keyword, pageNum)
+	if err != nil {
+		ReturnServerError(c, "搜索出错中断")
+		return
+	}
+
+	ReturnSuccess(c, "SUCCESS", "", res)
+}
+
+func (s SearchController) SearchUserSharedFolders(c *gin.Context) {
+	account := c.Query("account")
+	keyword := c.Query("keyword")
+
+	if account == "" || keyword == "" {
+		ReturnError(c, "FAILED", "没有提供搜索关键词")
+		return
+	}
+
+	userId, err := models.GetUserID(account)
+	if err != nil || userId == 0 {
+		ReturnError(c, "FAILED", "用户不存在")
+		return
+	}
+
+	res, err := services.SearchUserSharedFolders(userId, keyword)
 	if err != nil {
 		ReturnServerError(c, "搜索出错中断")
 		return
