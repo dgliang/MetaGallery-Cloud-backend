@@ -238,11 +238,11 @@ func SearchUserSharedFolders(userId uint, keyword string) (searchResponse, error
 		}
 
 		res = append(res, struct {
-			FolderName string
-			IPFSHash   string
-			Intro      string
-			CoverImg   string
-			PinDate    string
+			FolderName string `json:"folder_name"`
+			IPFSHash   string `json:"ipfs_hash"`
+			Intro      string `json:"intro"`
+			CoverImg   string `json:"cover_img"`
+			PinDate    string `json:"pin_date"`
 		}{
 			FolderName: folder.SharedName,
 			IPFSHash:   folder.IPFSHash,
