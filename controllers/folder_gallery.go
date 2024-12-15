@@ -11,18 +11,10 @@ import (
 // 获取用户自己共享的所有文件夹列表
 func (s FolderShareController) GetUserSharedFolders(c *gin.Context) {
 	account := c.Query("account")
-	pageNumStr := c.Query("page_num")
-	pageNum, _ := strconv.Atoi(pageNumStr)
 
 	// 需要先判断 account 字段是否为空
 	if account == "" {
 		ReturnError(c, "FAILED", "account 字段不能为空")
-		return
-	}
-
-	// 判断 page_num 是否大于 0
-	if pageNum <= 0 {
-		ReturnError(c, "FAILED", "page_num 必须大于 0")
 		return
 	}
 
@@ -34,7 +26,7 @@ func (s FolderShareController) GetUserSharedFolders(c *gin.Context) {
 	}
 
 	// 获取用户共享的文件夹列表
-	res, err := services.ListUserSharedFolders(userId, pageNum)
+	res, err := services.ListUserSharedFolders(userId)
 	if err != nil {
 		ReturnServerError(c, "获取用户共享的文件夹列表失败"+err.Error())
 		return
