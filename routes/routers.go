@@ -34,6 +34,7 @@ func Router(r *gin.Engine) {
 		api.DELETE("/removeFolder", controllers.BinController{}.RemoveFolder)
 		api.DELETE("/deleteFolder", controllers.BinController{}.DeleteFolder)
 		api.GET("/listBinFolder", controllers.BinController{}.ListBinFolder)
+		api.GET("/getBinFolderInfo", controllers.BinController{}.GetBinFolderInfo)
 		api.POST("/recoverBinFolder", controllers.BinController{}.RecoverBinFolder)
 		api.POST("/shareFolder", controllers.FolderShareController{}.SetFolderShared)
 

@@ -4,6 +4,7 @@ import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -130,6 +131,46 @@ func (b BinController) ListBinFolder(c *gin.Context) {
 
 	folderBinRes := matchFolderBinResJson(folderData)
 	ReturnSuccess(c, "SUCCESS", "", folderBinRes)
+}
+
+func (b BinController) GetBinFolderInfo(c *gin.Context) {
+	account := c.Query("account")
+	binIdStr := c.Query("bin_id")
+	folderIdStr := c.Query("folder_id")
+
+	if account == "" || binIdStr == "" || folderIdStr == "" {
+		ReturnError(c, "FAILED", "查看回收站中文件夹信息时 account、bin_id 或 folder_id 不全")
+		return
+	}
+
+	userId, err := models.GetUserID(account)
+	if err != nil || userId == 0 {
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 用户不存在", account))
+		return
+	}
+
+	binId, _ := strconv.Atoi(binIdStr)
+	folderId, _ := strconv.Atoi(folderIdStr)
+
+	if !services.IsFolderInBin(userId, uint(binId)) {
+		ReturnError(c, "FAILED", "要查看的回收站记录不存在")
+		return
+	}
+
+	if !services.CheckFolderBinAndUserRel(userId, uint(folderId), uint(binId)) {
+		ReturnError(c, "FAILED", "要查看的回收站记录，文件夹和用户对应不上")
+		return
+	}
+
+	var binFolderInfos []services.FolderBinInfo
+	binFolderInfo, err := services.GetBinFolderInfoByID(userId, uint(binId), uint(folderId))
+	if err != nil {
+		ReturnServerError(c, "GetBinFolderInfoByID: "+err.Error())
+		return
+	}
+	binFolderInfos = append(binFolderInfos, binFolderInfo)
+
+	ReturnSuccess(c, "SUCCESS", "", matchFolderBinResJson(binFolderInfos)[0])
 }
 
 func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson {

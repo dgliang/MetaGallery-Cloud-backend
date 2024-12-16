@@ -11,7 +11,10 @@ import (
 )
 
 func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string) error {
-	folderData, err := models.GetFolderDataByID(folderId)
+	var folderData models.FolderData
+
+	// 防止文件夹已经被软删除了，但是共享文件夹是无所谓的，所以使用 Unscoped
+	err := models.DataBase.Unscoped().Where("id = ?", folderId).First(&folderData).Error
 	if err != nil {
 		return fmt.Errorf("SetFolderShareState: get folder data: %w", err)
 	}
@@ -73,7 +76,9 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 func setShareFolderState(userId, folderId uint, shareState bool) error {
 	return models.DataBase.Transaction(func(tx *gorm.DB) error {
 		var folder models.FolderData
-		if err := tx.First(&folder, "id = ? AND belong_to = ?", folderId, userId).Error; err != nil {
+
+		// 防止文件夹已经被软删除了，但是共享文件夹是无所谓的，所以使用 Unscoped
+		if err := tx.Unscoped().First(&folder, "id = ? AND belong_to = ?", folderId, userId).Error; err != nil {
 			return err
 		}
 
