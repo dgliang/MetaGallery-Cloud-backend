@@ -409,7 +409,7 @@ func (receiver FolderController) GetAllFavoriteFolders(c *gin.Context) {
 		return
 	}
 
-	favorFolders, err := services.GetAllFavorFiles(userID)
+	favorFolders, err := services.GetAllFavorFolders(userID)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return

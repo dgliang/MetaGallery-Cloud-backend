@@ -144,6 +144,14 @@ func GetFileData(fileID uint) (FileData, error) {
 	return fileData, nil
 }
 
+func UnscopedGetFileData(fileID uint) (FileData, error) {
+	var fileData FileData
+	// 预加载
+	DataBase.Preload("ParentFolder").Model(&FileData{ID: fileID}).Unscoped().Where("id = ?", fileID).Find(&fileData)
+
+	return fileData, nil
+}
+
 func GetDeletedFileData(fileID uint) (FileData, error) {
 	var fileData FileData
 	// 预加载

@@ -470,3 +470,11 @@ func SearchBinFile(userID uint, pattern string) ([]models.FileBrief, error) {
 
 	return fileBriefs, nil
 }
+
+func GetBinFileData(fileID uint) (models.FileData, error) {
+	fileData, err := models.UnscopedGetFileData(fileID)
+	if err != nil {
+		return models.FileData{}, err
+	}
+	return fileData, nil
+}

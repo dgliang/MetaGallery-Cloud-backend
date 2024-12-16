@@ -44,6 +44,7 @@ func Router(r *gin.Engine) {
 		api.GET("/getFavoriteFile", controllers.FileController{}.GetFavorFiles)
 		api.GET("/loadFolder/getSubFileinfo", controllers.FileController{}.GetSubFiles)
 		api.GET("/getFileData", middlewares.ResourceAccessAuthMiddleWare(), controllers.FileController{}.GetFileData)
+		api.GET("/getBinFileData", middlewares.ResourceAccessAuthMiddleWare(), controllers.FileController{}.GetBinFileData)
 		api.DELETE("/removeFile", controllers.FileController{}.RemoveFile)
 		api.GET("/listBinFile", controllers.FileController{}.GetBinFiles)
 		api.POST("/recoverBinFile", controllers.FileController{}.RecoverFile)
