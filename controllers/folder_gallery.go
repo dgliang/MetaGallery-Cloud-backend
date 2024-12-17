@@ -11,18 +11,10 @@ import (
 // 获取用户自己共享的所有文件夹列表
 func (s FolderShareController) GetUserSharedFolders(c *gin.Context) {
 	account := c.Query("account")
-	pageNumStr := c.Query("page_num")
-	pageNum, _ := strconv.Atoi(pageNumStr)
 
 	// 需要先判断 account 字段是否为空
 	if account == "" {
 		ReturnError(c, "FAILED", "account 字段不能为空")
-		return
-	}
-
-	// 判断 page_num 是否大于 0
-	if pageNum <= 0 {
-		ReturnError(c, "FAILED", "page_num 必须大于 0")
 		return
 	}
 
@@ -34,7 +26,7 @@ func (s FolderShareController) GetUserSharedFolders(c *gin.Context) {
 	}
 
 	// 获取用户共享的文件夹列表
-	res, err := services.ListUserSharedFolders(userId, pageNum)
+	res, err := services.ListUserSharedFolders(userId)
 	if err != nil {
 		ReturnServerError(c, "获取用户共享的文件夹列表失败"+err.Error())
 		return
@@ -80,17 +72,41 @@ func (s FolderShareController) GetFolderInfo(c *gin.Context) {
 		return
 	}
 
-	sharedFolder, err := services.GetSharedFolderByOwnerAndName(userId, folderName)
-	if err != nil || sharedFolder.ID == 0 {
-		ReturnError(c, "FAILED", "要删除的共享文件夹不存在")
-		return
-	}
-
-	res, err := services.GetSharedFolderInfo(ownerAccount, ipfsHash)
+	res, err := services.GetSharedFolderInfoFromIPFS(ownerAccount, ipfsHash)
 	if err != nil {
 		ReturnServerError(c, "获取共享文件夹信息失败"+err.Error())
 		return
 	}
 
 	ReturnSuccess(c, "SUCCESS", "", res)
+}
+
+func (s FolderShareController) DownloadSharedFile(c *gin.Context) {
+	account := c.Query("account")
+	fileName := c.Query("file_name")
+	ipfsHash := c.Query("ipfs_hash")
+
+	if account == "" || fileName == "" || ipfsHash == "" {
+		ReturnError(c, "FAILED", "account, file_name, ipfs_hash 字段不能为空")
+		return
+	}
+
+	userId, err := models.GetUserID(account)
+	if err != nil || userId == 0 {
+		ReturnError(c, "FAILED", "获取用户ID失败，用户不存在")
+		return
+	}
+
+	sharedFolder, err := services.GetSharedFolderByIPFSHash(userId, ipfsHash)
+	if err == nil && sharedFolder.ID != 0 {
+		ReturnError(c, "FAILED", "要下载的是共享文件夹而不是共享文件，不支持下载共享文件夹")
+		return
+	}
+
+	// 从缓存文件中获取共享文件数据并传送给前端
+	err = services.DownloadSharedFile(c, fileName, ipfsHash)
+	if err != nil {
+		ReturnServerError(c, "下载共享文件失败"+err.Error())
+		return
+	}
 }

@@ -133,7 +133,7 @@ func pngPreview(c *gin.Context, fullFilePath string) error {
 
 func DerectlyReturnFileURL(fullFilePath string) (string, error) {
 
-	fileURL := path.Join(hostUrl, fullFilePath)
+	fileURL := path.Join(config.HostURL, fullFilePath)
 
 	return fileURL, nil
 }

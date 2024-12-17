@@ -8,17 +8,16 @@ import (
 )
 
 type FolderData struct {
-	ID              uint   `gorm:"primaryKey;index;not null;autoIncrement"`
-	BelongTo        uint   `gorm:"default:NULL"`
-	FolderName      string `gorm:"type:varchar(255); not null;"`
-	ParentFolder    uint   `gorm:"default:NULL"`
-	Path            string
-	Favorite        bool   `gorm:"index; default:false"`
-	Share           bool   `gorm:"default:false"`
-	IPFSInformation string `gorm:"column:ipfs_information"`
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	ID           uint   `gorm:"primaryKey;index;not null;autoIncrement"`
+	BelongTo     uint   `gorm:"default:NULL"`
+	FolderName   string `gorm:"type:varchar(255); not null;"`
+	ParentFolder uint   `gorm:"default:NULL"`
+	Path         string
+	Favorite     bool `gorm:"index; default:false"`
+	Share        bool `gorm:"default:false"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 
 	//外键约束
 	User       UserData     `gorm:"foreignKey:BelongTo;"`

@@ -57,11 +57,13 @@ func Router(r *gin.Engine) {
 		api.GET("/gallery/getUserGallery", controllers.FolderShareController{}.GetUserSharedFolders)
 		api.GET("/gallery/getAllGallery", controllers.FolderShareController{}.GetAllSharedFolders)
 		api.GET("/gallery/getFolderInfo", controllers.FolderShareController{}.GetFolderInfo)
+		api.GET("/gallery/downloadFile", controllers.FolderShareController{}.DownloadSharedFile)
 
 		// 查询管理
 		api.GET("/search/listFilesAndFolders", controllers.SearchController{}.SearchFilesAndFolders)
 		api.GET("/search/listBinFilesAndFolders", controllers.SearchController{}.SearchBinFilesAndFolders)
 		api.GET("/search/favorFilesAndFolders", controllers.SearchController{}.SearchFavoriteFilesAndFolders)
-		// SearchFavoriteFilesAndFolders
+		api.GET("/search/gallery", controllers.SearchController{}.SearchSharedFolders)
+		api.GET("/search/sharedFolders", controllers.SearchController{}.SearchUserSharedFolders)
 	}
 }

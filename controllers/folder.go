@@ -92,7 +92,6 @@ func (receiver FolderController) GetFolderInfo(c *gin.Context) {
 		Path:       TrimPathPrefix(folderData.Path),
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
-		IPFSHash:   folderData.IPFSInformation,
 	}
 	ReturnSuccess(c, "SUCCESS", "", folderRes)
 }
@@ -247,7 +246,6 @@ func matchFolderResJson(foldersData []models.FolderData) []FolderJson {
 			Path:       TrimPathPrefix(folderData.Path),
 			IsFavorite: folderData.Favorite,
 			IsShare:    folderData.Share,
-			IPFSHash:   folderData.IPFSInformation,
 		})
 	}
 	return folderJson

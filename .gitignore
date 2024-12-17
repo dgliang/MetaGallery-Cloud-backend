@@ -41,3 +41,4 @@ go.work.sum
 # 用户文件
 resources/files/*
 !resources/files/
+resources/.cache/*

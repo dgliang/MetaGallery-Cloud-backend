@@ -24,9 +24,11 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 	if shareState {
 		var introStr string
 		var sharedName string
-		if len(intro) > 1 {
+		var coverImg string
+		if len(intro) > 2 {
 			sharedName = intro[0]
 			introStr = intro[1]
+			coverImg = intro[2]
 		} else {
 			return fmt.Errorf("SetFolderShareState: sharedName or intro is empty")
 		}
@@ -46,7 +48,7 @@ func SetFolderShareState(userId, folderId uint, shareState bool, intro ...string
 
 		// 3. 更新数据库，在 shared_folders 表中插入一条记录
 		log.Println(folderCID)
-		if _, err := CreateSharedFolder(userId, folderId, sharedName, introStr, folderCID); err != nil {
+		if _, err := CreateSharedFolder(userId, folderId, sharedName, introStr, folderCID, coverImg); err != nil {
 			return fmt.Errorf("SetFolderShareState: create shared folder: %w", err)
 		}
 	} else {
@@ -206,12 +208,13 @@ func generateMetaInFolder(folderName string, files, subFolders []map[string]inte
 }
 
 // 数据库中 shared_folders 表中创建新的共享文件夹的记录
-func CreateSharedFolder(userId, folderId uint, sharedName, intro, ipfsHash string) (uint, error) {
+func CreateSharedFolder(userId, folderId uint, sharedName, intro, ipfsHash, coverImg string) (uint, error) {
 	sharedFolder := models.SharedFolder{
 		OwnerID:    userId,
 		FolderID:   folderId,
 		SharedName: sharedName,
 		Intro:      intro,
+		CoverImg:   coverImg,
 		IPFSHash:   ipfsHash,
 	}
 
@@ -227,5 +230,12 @@ func DeleteSharedFolder(userId, folderId uint) error {
 func GetSharedFolderByOwnerAndName(ownerId uint, folderName string) (models.SharedFolder, error) {
 	var sharedFolder models.SharedFolder
 	return sharedFolder, models.DataBase.Where("owner_id = ? AND shared_name = ?", ownerId, folderName).
+		First(&sharedFolder).Error
+}
+
+// 根据 owner_id 和 folder_id 查询共享文件夹
+func GetSharedFolderByOwnerAndFolderId(ownerId, folderId uint) (models.SharedFolder, error) {
+	var sharedFolder models.SharedFolder
+	return sharedFolder, models.DataBase.Where("owner_id = ? AND folder_id = ?", ownerId, folderId).
 		First(&sharedFolder).Error
 }

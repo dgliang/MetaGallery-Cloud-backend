@@ -148,7 +148,6 @@ func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson 
 				Path:       TrimPathPrefix(folder.FolderData.Path),
 				IsFavorite: folder.FolderData.Favorite,
 				IsShare:    folder.FolderData.Share,
-				IPFSHash:   folder.FolderData.IPFSInformation,
 			},
 			folder.BinId,
 			folder.DelTime.Format("2006-01-02 15:04:05"),

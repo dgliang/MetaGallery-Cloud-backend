@@ -120,25 +120,6 @@ func removeSubfolder(tx *gorm.DB, userId uint, parentPath string) error {
 
 	// 遍历子文件夹并进行软删除
 	for _, subFolder := range subFolders {
-		//// 将文件夹数据插入到回收站表 Bin
-		//subBin := models.Bin{
-		//	Type:        models.FOLDER,
-		//	DeletedTime: deleteTime,
-		//	UserID:      userId,
-		//}
-		//if err := tx.Create(&subBin).Error; err != nil {
-		//	return err
-		//}
-		//
-		//// 在 FolderBin 表中记录文件夹与回收站的关联
-		//subFolderBin := models.FolderBin{
-		//	FolderID: subFolder.ID,
-		//	BinID:    subBin.ID,
-		//}
-		//if err := tx.Create(&subFolderBin).Error; err != nil {
-		//	return err
-		//}
-
 		// 从原文件夹表中删除（软删除）
 		if err := tx.Delete(&subFolder).Error; err != nil {
 			return err
@@ -217,17 +198,16 @@ func ListBinFolders(userId uint) ([]FolderBinInfo, error) {
 		fullFolderPath := strings.ReplaceAll(folder.Path, folder.FolderName, fullFolderName)
 		folderBinInfo = append(folderBinInfo, FolderBinInfo{
 			FolderData: models.FolderData{
-				ID:              folder.ID,
-				BelongTo:        folder.BelongTo,
-				FolderName:      fullFolderName,
-				ParentFolder:    folder.ParentFolder,
-				Path:            fullFolderPath,
-				Favorite:        folder.Favorite,
-				Share:           folder.Share,
-				IPFSInformation: folder.IPFSInformation,
-				CreatedAt:       folder.CreatedAt,
-				UpdatedAt:       folder.UpdatedAt,
-				DeletedAt:       folder.DeletedAt,
+				ID:           folder.ID,
+				BelongTo:     folder.BelongTo,
+				FolderName:   fullFolderName,
+				ParentFolder: folder.ParentFolder,
+				Path:         fullFolderPath,
+				Favorite:     folder.Favorite,
+				Share:        folder.Share,
+				CreatedAt:    folder.CreatedAt,
+				UpdatedAt:    folder.UpdatedAt,
+				DeletedAt:    folder.DeletedAt,
 			},
 			BinId:   bin.ID,
 			DelTime: bin.DeletedTime,

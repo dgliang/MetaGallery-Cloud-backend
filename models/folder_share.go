@@ -8,6 +8,7 @@ type SharedFolder struct {
 	FolderID   uint   `gorm:"not null;index"`
 	SharedName string `gorm:"type:varchar(255);not null;column:shared_name"`
 	Intro      string `gorm:"not null;column:intro"`
+	CoverImg   string `gorm:"not null;colunm:cover_img;type:varchar(255)"`
 	IPFSHash   string `gorm:"type:varchar(255);not null;column:ipfs_hash"`
 	CreatedAt  time.Time
 

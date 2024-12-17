@@ -26,11 +26,6 @@ func (u UerController) Register(c *gin.Context) {
 		ReturnError(c, "FAILED", "账号 account 不符合规范")
 		return
 	}
-	// // 如果密码 password 不符合规范
-	if !services.IsValidPassword(password) {
-		ReturnError(c, "FAILED", "密码 password 不符合规范")
-		return
-	}
 
 	if password != confirmPassword {
 		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)
@@ -185,12 +180,6 @@ func (u UerController) UpdateUserPassword(c *gin.Context) {
 		ReturnError(c, "FAILED", "修改密码失败，原密码错误")
 		return
 	}
-
-	// // 如果新密码 newPassword 不符合规范
-	// if !services.IsValidPassword(newPassword) {
-	// 	ReturnError(c, "FAILED", "新密码不符合规范")
-	// 	return
-	// }
 
 	if newPassword != confirmPassword {
 		log.Printf("from %s 提供的密码与确认密码不相同\n", c.Request.Host)

@@ -7,8 +7,7 @@ import (
 )
 
 type searchResponse struct {
-	TotalPage int         `json:"total_page"`
-	Result    interface{} `json:"result"`
+	Result interface{} `json:"result"`
 }
 
 type searchNormalResponse struct {
@@ -19,7 +18,6 @@ type searchNormalResponse struct {
 	Path       string `json:"path"`
 	IsFavorite bool   `json:"is_favorite"`
 	IsShared   bool   `json:"is_shared"`
-	IPFSHash   string `json:"ipfs_hash"`
 }
 
 type searchBinResponse struct {
@@ -31,7 +29,6 @@ type searchBinResponse struct {
 	Path       string    `json:"path"`
 	IsFavorite bool      `json:"is_favorite"`
 	IsShared   bool      `json:"is_shared"`
-	IPFSHash   string    `json:"ipfs_hash"`
 	DelTime    time.Time `json:"del_time"`
 }
 
@@ -43,28 +40,11 @@ type searchFavorResponse struct {
 	Path   string `json:"path"`
 }
 
-func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string, pageNum int) (searchResponse, error) {
-	// 获取总页数，PAGE_SIZE = 10
-	var totalCount int64
-	err := models.DataBase.Raw(`
-		(SELECT COUNT(*) 
-		FROM file_data 
-		WHERE file_name LIKE ? AND belong_to = ? AND path LIKE ?)
-		UNION ALL
-		(SELECT COUNT(*) 
-		FROM folder_data 
-		WHERE folder_name LIKE ? AND belong_to = ? AND path LIKE ?)
-	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%").Scan(&totalCount).Error
-	if err != nil {
-		return searchResponse{}, err
-	}
-
-	totalPage := int((totalCount + int64(PAGE_SIZE) - 1) / int64(PAGE_SIZE))
-
-	// 使用 UNION 进行分页查询
+func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchResponse, error) {
+	// 使用 UNION 进行查询
 	var result []searchNormalResponse
 
-	err = models.DataBase.Raw(`
+	err := models.DataBase.Raw(`
 		(SELECT 
 			'FILE' AS type, 
 			id, 
@@ -72,8 +52,7 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string, pageNum 
 			file_name AS name, 
 			path, 
 			favorite AS is_favorite, 
-			share AS is_shared, 
-			ipfs_information AS ipfs_hash 
+			share AS is_shared
 		FROM file_data 
 		WHERE file_name LIKE ? AND belong_to = ? AND path LIKE ?)
 		UNION
@@ -84,14 +63,10 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string, pageNum 
 			folder_name AS name, 
 			path, 
 			favorite AS is_favorite, 
-			share AS is_shared, 
-			ipfs_information AS ipfs_hash 
+			share AS is_shared
 		FROM folder_data 
 		WHERE folder_name LIKE ? AND belong_to = ? AND path LIKE ?)
-		LIMIT ? 
-		OFFSET ?
-	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%", PAGE_SIZE, (pageNum-1)*PAGE_SIZE).
-		Scan(&result).Error
+	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%").Scan(&result).Error
 	if err != nil {
 		return searchResponse{}, err
 	}
@@ -102,41 +77,17 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string, pageNum 
 	}
 
 	return searchResponse{
-		TotalPage: totalPage,
-		Result:    result,
+		Result: result,
 	}, nil
 }
 
-func SearchBinFilesAndFolders(userId uint, keyword string, pageNum int) (searchResponse, error) {
+func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, error) {
 	// 对 keyword 进行预处理
 	keyword = keyword + "_bin_"
-	// 获取总页数，PAGE_SIZE = 10
-	var totalCount int64
-	err := models.DataBase.Raw(`
-	SELECT COUNT(*) 
-	FROM (
-		(SELECT b.id
-		FROM file_bins fb
-		JOIN bins b ON fb.bin_id = b.id
-		JOIN file_data f ON fb.file_id = f.id
-		WHERE f.file_name LIKE ? AND b.user_id = ? AND f.deleted_at IS NOT NULL)
-		UNION ALL
-		(SELECT b.id
-		FROM folder_bins fb
-		JOIN bins b ON fb.bin_id = b.id
-		JOIN folder_data fd ON fb.folder_id = fd.id
-		WHERE fd.folder_name LIKE ? AND b.user_id = ? AND fd.deleted_at IS NOT NULL)
-	) AS combined
-	`, keyword+"%", userId, keyword+"%", userId).Scan(&totalCount).Error
-	if err != nil {
-		return searchResponse{}, err
-	}
-
-	totalPage := int((totalCount + int64(PAGE_SIZE) - 1) / int64(PAGE_SIZE))
 
 	// 查询符合条件的记录
 	var result []searchBinResponse
-	err = models.DataBase.Raw(`
+	err := models.DataBase.Raw(`
 	(
 		SELECT
 			'FILE' AS type,
@@ -147,7 +98,6 @@ func SearchBinFilesAndFolders(userId uint, keyword string, pageNum int) (searchR
 			f.path,
 			f.favorite AS is_favorite,
 			f.share AS is_shared,
-			f.ipfs_information AS ipfs_hash,
 			b.deleted_time AS del_time
 		FROM file_bins fb
 		JOIN bins b ON fb.bin_id = b.id
@@ -165,17 +115,13 @@ func SearchBinFilesAndFolders(userId uint, keyword string, pageNum int) (searchR
 			fd.path,
 			fd.favorite AS is_favorite,
 			fd.share AS is_shared,
-			fd.ipfs_information AS ipfs_hash,
 			b.deleted_time AS del_time
 		FROM folder_bins fb
 		JOIN bins b ON fb.bin_id = b.id
 		JOIN folder_data fd ON fb.folder_id = fd.id
 		WHERE fd.folder_name LIKE ? AND b.user_id = ? AND fd.deleted_at IS NOT NULL
 	)
-	ORDER BY del_time DESC
-	LIMIT ?
-	OFFSET ?
-	`, keyword+"%", userId, keyword+"%", userId, PAGE_SIZE, (pageNum-1)*PAGE_SIZE).Scan(&result).Error
+	`, keyword+"%", userId, keyword+"%", userId).Scan(&result).Error
 	if err != nil {
 		return searchResponse{}, err
 	}
@@ -189,8 +135,7 @@ func SearchBinFilesAndFolders(userId uint, keyword string, pageNum int) (searchR
 	}
 
 	return searchResponse{
-		TotalPage: totalPage,
-		Result:    result,
+		Result: result,
 	}, nil
 }
 
@@ -249,7 +194,40 @@ func SearchFavoriteFilesAndFolders(userID uint, pattern string, pageNum int) (se
 	}
 
 	return searchResponse{
-		TotalPage: 0,
-		Result:    favorResponses,
+		Result: favorResponses,
 	}, nil
+}
+
+func SearchAllSharedFolders(keyword string, pageNum int) (FolderGallery, error) {
+	var totalRecords int64
+	err := models.DataBase.Model(&models.SharedFolder{}).Where("shared_name LIKE ?",
+		keyword+"%").Count(&totalRecords).Error
+	if err != nil {
+		return FolderGallery{}, err
+	}
+
+	totalPage := int((totalRecords + int64(PAGE_SIZE) - 1) / int64(PAGE_SIZE))
+
+	var sharedFolders []models.SharedFolder
+	err = models.DataBase.Where("shared_name LIKE ?", keyword+"%").Limit(PAGE_SIZE).
+		Offset((pageNum - 1) * PAGE_SIZE).Find(&sharedFolders).Error
+	if err != nil {
+		return FolderGallery{}, err
+	}
+
+	res := matchSharedFolderModelToResponse(sharedFolders, totalPage)
+
+	return res, nil
+}
+
+func SearchUserSharedFolders(userId uint, keyword string) (FolderGallery, error) {
+	var sharedFolders []models.SharedFolder
+	err := models.DataBase.Where("shared_name LIKE ? AND owner_id = ?", keyword+"%", userId).
+		Find(&sharedFolders).Error
+	if err != nil {
+		return FolderGallery{}, err
+	}
+
+	res := matchSharedFolderModelToResponse(sharedFolders)
+	return res, nil
 }
