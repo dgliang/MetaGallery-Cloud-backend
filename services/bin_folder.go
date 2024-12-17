@@ -217,6 +217,48 @@ func ListBinFolders(userId uint) ([]FolderBinInfo, error) {
 	return folderBinInfo, nil
 }
 
+func GetBinFolderInfoByID(userId, binId, folderId uint) (FolderBinInfo, error) {
+	// 获取 Bin 回收站中文件夹
+	var binRecord models.Bin
+	if err := models.DataBase.Where("id = ? AND user_id = ? AND type = ?", binId, userId, models.FOLDER).
+		First(&binRecord).Error; err != nil {
+		return FolderBinInfo{}, err
+	}
+
+	folderBin, err := getFolderBinDataByBinId(binRecord.ID)
+	if err != nil {
+		return FolderBinInfo{}, err
+	}
+
+	// 获取 folderData 中对应的记录
+	var folder models.FolderData
+	if err := models.DataBase.Unscoped().First(&folder, "id = ?", folderBin.FolderID).Error; err != nil {
+		return FolderBinInfo{}, err
+	}
+
+	// 将 folderName 和 path 处理，去除时间戳
+	fullFolderName, _ := SplitBinTimestamp(folder.FolderName)
+	fullFolderPath := strings.ReplaceAll(folder.Path, folder.FolderName, fullFolderName)
+	folderBinInfo := FolderBinInfo{
+		FolderData: models.FolderData{
+			ID:           folder.ID,
+			BelongTo:     folder.BelongTo,
+			FolderName:   fullFolderName,
+			ParentFolder: folder.ParentFolder,
+			Path:         fullFolderPath,
+			Favorite:     folder.Favorite,
+			Share:        folder.Share,
+			CreatedAt:    folder.CreatedAt,
+			UpdatedAt:    folder.UpdatedAt,
+			DeletedAt:    folder.DeletedAt,
+		},
+		BinId:   binRecord.ID,
+		DelTime: binRecord.DeletedTime,
+	}
+
+	return folderBinInfo, nil
+}
+
 func getFolderBinDataByBinId(binId uint) (models.FolderBin, error) {
 	var folderBin models.FolderBin
 	if err := models.DataBase.Where("bin_id = ?", binId).First(&folderBin).Error; err != nil {
