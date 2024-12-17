@@ -476,5 +476,12 @@ func GetBinFileData(fileID uint) (models.FileData, error) {
 	if err != nil {
 		return models.FileData{}, err
 	}
+	path := fileData.Path
+	dirParts := strings.Split(path, "/")
+	dirParts[len(dirParts)-1] = fileData.FileName
+	newPath := strings.Join(dirParts[2:], "/")
+
+	fileData.Path = newPath
+
 	return fileData, nil
 }
