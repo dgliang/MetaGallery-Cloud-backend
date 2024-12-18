@@ -46,8 +46,8 @@ func GetPreview(c *gin.Context, fileID uint) error {
 	// case ".svg":
 	// 	return svgPreview(c, fullFilePath)
 	// }
-
-	return fmt.Errorf("该格式不支持预览")
+	return nil
+	// return fmt.Errorf("该格式不支持预览")
 }
 
 func GetPreviewURL(c *gin.Context, fileID uint) (string, error) {

@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -110,8 +111,8 @@ func RenameFileWithFileID(fileID uint, newFileName string) error {
 	}
 	var originFileData FileData
 	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
-
-	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName})
+	newType := filepath.Ext(originFileData.FileName)
+	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, FileType: newType})
 	return nil
 }
 
