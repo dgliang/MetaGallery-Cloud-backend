@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	PAGE_SIZE = 10 // 每页条数
+	PAGE_SIZE = 12 // 每页条数
 )
 
 type FolderGallery struct {

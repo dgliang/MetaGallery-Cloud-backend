@@ -43,10 +43,16 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		return
 	}
 
-	// 判断共享文件夹是否已经存在
+	// 判断文件夹是不是已经是共享状态，如果是的话，本次共享失败
+	if folderData.Share {
+		ReturnError(c, "FAILED", "文件夹已经是共享状态")
+		return
+	}
+
+	// 判断共享文件夹是否重名
 	sharedFolder, _ := services.GetSharedFolderByOwnerAndName(userId, sharedName)
 	if sharedFolder.ID != 0 {
-		ReturnError(c, "FAILED", "共享文件夹已经存在")
+		ReturnError(c, "FAILED", "共享文件夹已经存在，命名冲突")
 		return
 	}
 

@@ -2,6 +2,7 @@ package services
 
 import (
 	"MetaGallery-Cloud-backend/models"
+	"log"
 	"strings"
 	"time"
 )
@@ -82,12 +83,9 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchR
 }
 
 func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, error) {
-	// 对 keyword 进行预处理
-	keyword = keyword + "_bin_"
-
 	// 查询符合条件的记录
 	var result []searchBinResponse
-	err := models.DataBase.Raw(`
+	err := models.DataBase.Unscoped().Raw(`
 	(
 		SELECT
 			'FILE' AS type,
@@ -122,6 +120,7 @@ func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, erro
 		WHERE fd.folder_name LIKE ? AND b.user_id = ? AND fd.deleted_at IS NOT NULL
 	)
 	`, keyword+"%", userId, keyword+"%", userId).Scan(&result).Error
+	log.Print(result)
 	if err != nil {
 		return searchResponse{}, err
 	}
