@@ -3,6 +3,7 @@ package middlewares
 import (
 	"MetaGallery-Cloud-backend/controllers"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -56,6 +57,76 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 			controllers.ReturnServerError(c, "存储 jwt token 到上下文失败")
 			c.Abort()
 			return
+		}
+
+		c.Next()
+	}
+}
+
+func TokenAuth2Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		jwtPayload, _ := c.Get("jwt_payload")
+		payloadMap, ok := jwtPayload.(map[string]interface{})
+		if !ok {
+			fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
+			c.JSON(403, gin.H{
+				"error":   "FORBIDDEN",
+				"message": "访问禁止",
+			})
+			c.Abort()
+			return
+		}
+		fmt.Println(payloadMap["account"])
+		contentType := c.GetHeader("Content-Type")
+
+		if contentType == "application/json" {
+			var jsonData map[string]interface{}
+			if err := c.ShouldBindJSON(&jsonData); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				c.Abort()
+				return
+			}
+			if jsonData["account"] != payloadMap["account"] {
+				fmt.Println(jsonData["account"], " ", payloadMap["account"])
+				c.JSON(403, gin.H{
+					"error":   "FORBIDDEN",
+					"message": "访问禁止",
+				})
+				c.Abort()
+				return
+			}
+			c.Set("jsondata", jsonData)
+
+		} else if strings.HasPrefix(contentType, "multipart/form-data") {
+			formData, err := c.MultipartForm()
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				c.Abort()
+				return
+			}
+			// fmt.Println(formData)
+			account := formData.Value["account"]
+			// fmt.Println(account[0])
+			if account[0] != payloadMap["account"] {
+				c.JSON(403, gin.H{
+					"error":   "FORBIDDEN",
+					"message": "访问禁止",
+				})
+				c.Abort()
+				return
+			}
+			c.Set("multipartForm", formData)
+		} else {
+			fmt.Println("maybe do not have a body")
+			account := c.Query("account")
+			if account != payloadMap["account"] {
+				c.JSON(403, gin.H{
+					"error":   "FORBIDDEN",
+					"message": "访问禁止",
+				})
+				c.Abort()
+				return
+			}
 		}
 
 		c.Next()

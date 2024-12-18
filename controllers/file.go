@@ -27,26 +27,26 @@ type FileBriefJson struct {
 }
 
 func (receiver FileController) UploadFile(c *gin.Context) {
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
-	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
+	// jwtPayload, _ := c.Get("jwt_payload")
+	// payloadMap, ok := jwtPayload.(map[string]interface{})
+	// if !ok {
+	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
+	// 	c.JSON(403, gin.H{
+	// 		"error":   "FORBIDDEN",
+	// 		"message": "访问禁止",
+	// 	})
+	// 	c.Abort()
+	// 	return
+	// }
 	account := c.DefaultPostForm("account", "")
-	if account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
+	// if account != payloadMap["account"] {
+	// 	c.JSON(403, gin.H{
+	// 		"error":   "FORBIDDEN",
+	// 		"message": "访问禁止",
+	// 	})
+	// 	c.Abort()
+	// 	return
+	// }
 	parentFolderID := c.DefaultPostForm("parent_id", "-1")
 	fileName := c.DefaultPostForm("file_name", "")
 
@@ -98,12 +98,6 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// _, err2 := services.DetectFileType(file)
-	// if err2 != nil {
-	// 	ReturnServerError(c, err.Error())
-	// 	return
-	// }
-
 	newfile, err := models.CreateFileData2(userID, fileName, uintPID, filepath.Ext(fileName))
 	if err != nil {
 		ReturnServerError(c, err.Error())
@@ -154,6 +148,7 @@ func (receiver FileController) DownloadFile(c *gin.Context) {
 		ReturnError(c, "FAILED", "文件ID不能为空")
 		return
 	}
+	// %isfilebelongto
 
 	FID, err := strconv.ParseUint(fileID, 10, 0)
 	if err != nil {
@@ -161,6 +156,15 @@ func (receiver FileController) DownloadFile(c *gin.Context) {
 		return
 	}
 	uintFID := uint(FID)
+
+	if !services.IsFileBelongto(userID, uintFID) {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
 
 	fileData, err := models.GetFileData(uintFID)
 	if err != nil {
@@ -177,26 +181,26 @@ func (receiver FileController) DownloadFile(c *gin.Context) {
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
-	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
+	// jwtPayload, _ := c.Get("jwt_payload")
+	// payloadMap, ok := jwtPayload.(map[string]interface{})
+	// if !ok {
+	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
+	// 	c.JSON(403, gin.H{
+	// 		"error":   "FORBIDDEN",
+	// 		"message": "访问禁止",
+	// 	})
+	// 	c.Abort()
+	// 	return
+	// }
 	account := c.DefaultPostForm("account", "")
-	if account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
+	// if account != payloadMap["account"] {
+	// 	c.JSON(403, gin.H{
+	// 		"error":   "FORBIDDEN",
+	// 		"message": "访问禁止",
+	// 	})
+	// 	c.Abort()
+	// 	return
+	// }
 	fileID := c.DefaultPostForm("file_id", "-1")
 	newFileName := c.DefaultPostForm("new_file_name", "")
 
@@ -389,43 +393,40 @@ type favoriteFileRequest struct {
 }
 
 func (receiver FileController) FavoriteFile(c *gin.Context) {
-	var req favoriteFileRequest
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
+	req, _ := c.Get("jsondata")
+	// fmt.Println(req)
+	jsondata, ok := req.(map[string]interface{})
 	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
-		return
-	}
-	if req.Account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
 		})
 		c.Abort()
 		return
 	}
 
-	// 验证 IsFavorite 的取值是否为 1 或者 2
+	isFavorite := jsondata["is_favorite"].(float64)
+	// fmt.Println("Type of jsondata[\"isFavorite\"]:", isFavorite, reflect.TypeOf(isFavorite))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	fileID := jsondata["file_id"].(float64)
+	uintFID := uint(fileID)
+	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
+
 	var favoriteStatus bool
-	if req.IsFavorite == 1 {
+	if isFavorite == 1 {
 		favoriteStatus = false
-	} else if req.IsFavorite == 2 {
+	} else if isFavorite == 2 {
 		favoriteStatus = true
 	} else {
 		ReturnError(c, "FAILED", "is_favorite 的取值只能是 1 或者 2")
 		return
 	}
+	fmt.Println("favoriteStatus:", favoriteStatus)
 
-	userID, err := models.GetUserID(req.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID"+err.Error())
 		return
@@ -435,7 +436,7 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 		return
 	}
 
-	Belongto := services.IsFileBelongto(userID, req.FileId)
+	Belongto := services.IsFileBelongto(userID, uintFID)
 	if !Belongto {
 		c.JSON(403, gin.H{
 			"error":   "FORBIDDEN",
@@ -445,7 +446,7 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 		return
 	}
 
-	fileData, err1 := models.GetFileData(req.FileId)
+	fileData, err1 := models.GetFileData(uintFID)
 	if err1 != nil {
 		ReturnServerError(c, "GetFileData: "+err1.Error())
 		return
@@ -457,13 +458,13 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 
 	// 更新文件的收藏状态
 	if favoriteStatus {
-		models.SetFileFavorite(req.FileId)
+		models.SetFileFavorite(uintFID)
 	} else {
-		models.CancelFileFavorite(req.FileId)
+		models.CancelFileFavorite(uintFID)
 	}
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
-		req.Account, req.FileId, favoriteStatus))
+		account, uintFID, favoriteStatus))
 }
 
 func (receiver FileController) GetFavorFiles(c *gin.Context) {
@@ -517,44 +518,36 @@ type deleteOrRecoverFilejson struct {
 }
 
 func (receiver FileController) RemoveFile(c *gin.Context) {
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
 	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
-	var req deleteOrRecoverFilejson
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息有误"+err.Error())
-		return
-	}
-	if req.Account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
 		})
 		c.Abort()
 		return
 	}
 
-	if req.Account == "" {
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	fileID := jsondata["file_id"].(float64)
+	uintFID := uint(fileID)
+	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
+
+	if account == "" {
 		log.Printf("from %s 将文件移入回收站提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
-	if req.Fileid == 0 {
+	if fileID == 0 {
 		log.Printf("from %s 将文件移入回收提供的文件信息不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "文件ID不能为空")
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -564,7 +557,7 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 		return
 	}
 
-	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	Belongto := services.IsFileBelongto(userID, uintFID)
 	if !Belongto {
 		c.JSON(403, gin.H{
 			"error":   "FORBIDDEN",
@@ -574,7 +567,7 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 		return
 	}
 
-	if err := services.RemoveFile(req.Fileid); err != nil {
+	if err := services.RemoveFile(uintFID); err != nil {
 		ReturnError(c, "FAILED", err.Error())
 		return
 	}
@@ -629,43 +622,36 @@ func (receiver FileController) GetBinFiles(c *gin.Context) {
 }
 
 func (receiver FileController) RecoverFile(c *gin.Context) {
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
 	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
-	var req deleteOrRecoverFilejson
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息格式有误"+err.Error())
-		return
-	}
-	if req.Account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
 		})
 		c.Abort()
 		return
 	}
 
-	if req.Account == "" {
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	fileID := jsondata["file_id"].(float64)
+	uintFID := uint(fileID)
+	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
+
+	if account == "" {
 		log.Printf("from %s 将文件移出回收站提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
-	if req.Fileid == 0 {
+	if uintFID == 0 {
 		log.Printf("from %s 将文件移出回收提供的文件信息不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "文件ID不能为空")
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -675,7 +661,7 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 		return
 	}
 
-	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	Belongto := services.IsFileBelongto(userID, uintFID)
 	if !Belongto {
 		c.JSON(403, gin.H{
 			"error":   "FORBIDDEN",
@@ -685,50 +671,43 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 		return
 	}
 
-	if err := services.RecoverFile(userID, req.Fileid); err != nil {
+	if err := services.RecoverFile(userID, uintFID); err != nil {
 		ReturnError(c, "FAILED", err.Error())
 	}
 	ReturnSuccess(c, "SUCCESS", "文件移出回收站成功", nil)
 }
 
 func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
-	jwtPayload, _ := c.Get("jwt_payload")
-	payloadMap, ok := jwtPayload.(map[string]interface{})
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
 	if !ok {
-		fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
-		})
-		c.Abort()
-		return
-	}
-	var req deleteOrRecoverFilejson
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息格式有误"+err.Error())
-		return
-	}
-	if req.Account != payloadMap["account"] {
-		c.JSON(403, gin.H{
-			"error":   "FORBIDDEN",
-			"message": "访问禁止",
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
 		})
 		c.Abort()
 		return
 	}
 
-	if req.Account == "" {
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	fileID := jsondata["file_id"].(float64)
+	uintFID := uint(fileID)
+	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
+
+	if account == "" {
 		log.Printf("from %s 将文件彻底删除提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
 		return
 	}
-	if req.Fileid == 0 {
+	if fileID == 0 {
 		log.Printf("from %s 将文件移彻底删除提供的文件信息不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "文件ID不能为空")
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -738,7 +717,7 @@ func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 		return
 	}
 
-	Belongto := services.IsFileBelongto(userID, req.Fileid)
+	Belongto := services.IsFileBelongto(userID, uintFID)
 	if !Belongto {
 		c.JSON(403, gin.H{
 			"error":   "FORBIDDEN",
@@ -748,7 +727,7 @@ func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 		return
 	}
 
-	err2 := services.ActuallyDeleteFile(req.Fileid)
+	err2 := services.ActuallyDeleteFile(uintFID)
 	if err2 != nil {
 		ReturnError(c, "FAILED", err2.Error())
 	}
@@ -879,6 +858,6 @@ func (receiver FileController) GetBinFileData(c *gin.Context) {
 		return
 	}
 
-	ReturnSuccess(c, "SUCCESS", "文件彻底删除成功", fileData)
+	ReturnSuccess(c, "SUCCESS", "获取文件信息成功", fileData)
 
 }

@@ -103,13 +103,33 @@ type createFolderRequest struct {
 }
 
 func (receiver FolderController) CreateFolder(c *gin.Context) {
-	var req createFolderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息不全。解析 JSON Request："+err.Error())
+	// var req createFolderRequest
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "提供的信息不全。解析 JSON Request："+err.Error())
+	// 	return
+	// }
+
+	req, _ := c.Get("jsondata")
+	// fmt.Println(req)
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	parentID := jsondata["parent_id"].(float64)
+	uintPID := uint(parentID)
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	folderName := jsondata["folder_name"].(string)
+
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "获取 GetUserID: "+err.Error())
 		return
@@ -120,20 +140,20 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	}
 
 	// 先判断给的父文件夹是否存在
-	parentFolderData, err := models.GetFolderDataByID(req.ParentID)
+	parentFolderData, err := models.GetFolderDataByID(uintPID)
 	if err != nil || parentFolderData.ID == 0 {
 		ReturnError(c, "FAILED", "父文件夹不存在")
 		return
 	}
 
 	// 判断文件夹的命名是否符合规范
-	if !services.IsValidFolderName(req.FolderName) {
+	if !services.IsValidFolderName(folderName) {
 		ReturnError(c, "FAILED", "文件夹命名不符合规范")
 		return
 	}
 
 	// 判断文件夹是否已经被创建过了
-	isExist, err := services.IsExist(userID, req.ParentID, req.FolderName)
+	isExist, err := services.IsExist(userID, uintPID, folderName)
 	if err != nil {
 		ReturnServerError(c, "IsExist"+err.Error())
 		return
@@ -143,13 +163,13 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		return
 	}
 
-	path, err := services.GenerateFolderPath(userID, req.ParentID, req.FolderName)
+	path, err := services.GenerateFolderPath(userID, uintPID, folderName)
 	if err != nil {
 		ReturnServerError(c, "GenerateFolderPath: "+err.Error())
 		return
 	}
 
-	folderData, err := models.CreateFolder(userID, req.ParentID, req.FolderName, path)
+	folderData, err := models.CreateFolder(userID, uintPID, folderName, path)
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
@@ -258,14 +278,36 @@ type renameFolderRequest struct {
 }
 
 func (receiver FolderController) RenameFolder(c *gin.Context) {
-	var req renameFolderRequest
+	// var req renameFolderRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的 JSON 数据出错"+err.Error())
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "提供的 JSON 数据出错"+err.Error())
+	// 	return
+	// }
+
+	req, _ := c.Get("jsondata")
+	// fmt.Println(req)
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	folderID := jsondata["folder_id"].(float64)
+	uintFolderID := uint(folderID)
+	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	newName := jsondata["new_folder_name"].(string)
+	// fmt.Println("Type of jsondata[\"new_folder_name\"]:", newName, reflect.TypeOf(newName))
+
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID"+err.Error())
 		return
@@ -275,20 +317,20 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 		return
 	}
 
-	folderData, err1 := models.GetFolderDataByID(req.FolderID)
+	folderData, err1 := models.GetFolderDataByID(uintFolderID)
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
 		return
 	}
 
 	// 判断文件夹的命名是否符合规范
-	if !services.IsValidFolderName(req.NewFolderName) {
+	if !services.IsValidFolderName(newName) {
 		ReturnError(c, "FAILED", "文件夹的新命名不符合规范")
 		return
 	}
 
 	// 更改前后的文件夹名称相同
-	if folderData.FolderName == req.NewFolderName {
+	if folderData.FolderName == newName {
 		folderRes := FolderJson{
 			ID:         folderData.ID,
 			User:       folderData.BelongTo,
@@ -303,19 +345,19 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 	}
 
 	// 检查是否新文件夹名称与现有名称冲突
-	tmpId, _ := models.GetFolderId(userID, folderData.ParentFolder, req.NewFolderName)
+	tmpId, _ := models.GetFolderId(userID, folderData.ParentFolder, newName)
 	if tmpId != 0 {
 		ReturnError(c, "FAILED", "重命名失败，因为新文件夹名称与现有名称冲突")
 		return
 	}
 
-	err = services.RenameFolderAndUpdatePath(userID, req.FolderID, req.NewFolderName)
+	err = services.RenameFolderAndUpdatePath(userID, uintFolderID, newName)
 	if err != nil {
 		ReturnServerError(c, "RenameFolderAndUpdatePath: "+err.Error())
 		return
 	}
 
-	folderData, err1 = models.GetFolderDataByID(req.FolderID)
+	folderData, err1 = models.GetFolderDataByID(uintFolderID)
 	if err1 != nil {
 		ReturnServerError(c, "GetFolderDataByID: "+err1.Error())
 	}
@@ -339,25 +381,45 @@ type favoriteFolderRequest struct {
 }
 
 func (receiver FolderController) FavoriteFolder(c *gin.Context) {
-	var req favoriteFolderRequest
+	// var req favoriteFolderRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
+	// 	return
+	// }
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
+	folderID := jsondata["folder_id"].(float64)
+	uintFolderID := uint(folderID)
+	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	isFavorite := jsondata["is_favorite"].(float64)
+	// fmt.Println("Type of jsondata[\"new_folder_name\"]:", newName, reflect.TypeOf(newName))
+
 	// 验证 IsFavorite 的取值是否为 1 或者 2
 	var favoriteStatus bool
-	if req.IsFavorite == 1 {
+	if isFavorite == 1 {
 		favoriteStatus = false
-	} else if req.IsFavorite == 2 {
+	} else if isFavorite == 2 {
 		favoriteStatus = true
 	} else {
 		ReturnError(c, "FAILED", "is_favorite 的取值只能是 1 或者 2")
 		return
 	}
 
-	userID, err := models.GetUserID(req.Account)
+	userID, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID"+err.Error())
 		return
@@ -367,7 +429,7 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 		return
 	}
 
-	folderData, err1 := models.GetFolderDataByID(req.FolderId)
+	folderData, err1 := models.GetFolderDataByID(uintFolderID)
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
 		return
@@ -380,14 +442,14 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 	}
 
 	// 更新文件夹的收藏状态
-	err = services.SetFolderFavorite(userID, req.FolderId, favoriteStatus)
+	err = services.SetFolderFavorite(userID, uintFolderID, favoriteStatus)
 	if err != nil {
 		ReturnServerError(c, "SetFolderFavorite: "+err.Error())
 		return
 	}
 
 	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("成功将 %s 的 %d 文件收藏状态改为 %t",
-		req.Account, req.FolderId, favoriteStatus))
+		account, uintFolderID, favoriteStatus))
 }
 
 func (receiver FolderController) GetAllFavoriteFolders(c *gin.Context) {

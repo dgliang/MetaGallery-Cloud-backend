@@ -43,10 +43,10 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		return
 	}
 
-	// 判断收藏文件夹是否已经存在
+	// 判断共享文件夹是否已经存在
 	sharedFolder, _ := services.GetSharedFolderByOwnerAndName(userId, sharedName)
 	if sharedFolder.ID != 0 {
-		ReturnError(c, "FAILED", "收藏文件夹已经存在")
+		ReturnError(c, "FAILED", "共享文件夹已经存在")
 		return
 	}
 

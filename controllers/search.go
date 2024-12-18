@@ -70,9 +70,9 @@ func (s SearchController) SearchBinFilesAndFolders(c *gin.Context) {
 func (s SearchController) SearchFavoriteFilesAndFolders(c *gin.Context) {
 	account := c.Query("account")
 	keyword := c.Query("keyword")
-	pageNumStr := c.Query("page_num")
+	// pageNumStr := c.Query("page_num")
 
-	if account == "" || keyword == "" || pageNumStr == "" {
+	if account == "" || keyword == "" {
 		ReturnError(c, "FAILED", "提供的参数不完整")
 		return
 	}
@@ -83,14 +83,14 @@ func (s SearchController) SearchFavoriteFilesAndFolders(c *gin.Context) {
 		return
 	}
 
-	pageNum, _ := strconv.ParseInt(pageNumStr, 10, 64)
-	if pageNum <= 0 {
-		ReturnError(c, "FAILED", "页码必须大于 0 ")
-		return
-	}
+	// pageNum, _ := strconv.ParseInt(pageNumStr, 10, 64)
+	// if pageNum <= 0 {
+	// 	ReturnError(c, "FAILED", "页码必须大于 0 ")
+	// 	return
+	// }
 
 	// 根据参数查询回收站的文件和文件夹
-	res, err := services.SearchFavoriteFilesAndFolders(userId, keyword, int(pageNum))
+	res, err := services.SearchFavoriteFilesAndFolders(userId, keyword, 0)
 	if err != nil {
 		ReturnServerError(c, "查询失败"+err.Error())
 		return

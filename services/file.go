@@ -126,7 +126,7 @@ func RenameFile(userID, fileID uint, newFileName string) error {
 
 func IsFileBelongto(userID, fileID uint) bool {
 
-	fileData, err := models.GetFileData(fileID)
+	fileData, err := models.UnscopedGetFileData(fileID)
 	if err != nil {
 		return false
 	}

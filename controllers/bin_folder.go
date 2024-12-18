@@ -15,23 +15,40 @@ type removeFolderRequest struct {
 }
 
 func (b BinController) RemoveFolder(c *gin.Context) {
-	var req removeFolderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "将文件夹移至回收站时信息不全"+err.Error())
+	// var req removeFolderRequest
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "将文件夹移至回收站时信息不全"+err.Error())
+	// 	return
+	// }
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
-	userId, err := models.GetUserID(req.Account)
+	folderID := jsondata["folder_id"].(float64)
+	uintFolderID := uint(folderID)
+	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	userId, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID: "+err.Error())
 		return
 	}
 	if userId == 0 {
-		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", req.Account))
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", account))
 		return
 	}
 
-	folderData, err1 := models.GetFolderDataByID(req.FolderId)
+	folderData, err1 := models.GetFolderDataByID(uintFolderID)
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "要删除的文件夹不存在")
 		return
@@ -42,7 +59,7 @@ func (b BinController) RemoveFolder(c *gin.Context) {
 		return
 	}
 
-	err = services.RemoveFolder(userId, req.FolderId)
+	err = services.RemoveFolder(userId, uintFolderID)
 	if err != nil {
 		ReturnServerError(c, "RemoveFolder: "+err.Error())
 		return
@@ -57,42 +74,63 @@ type deleteFolderRequest struct {
 }
 
 func (b BinController) DeleteFolder(c *gin.Context) {
-	var req deleteFolderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "将文件夹彻底删除时信息不全"+err.Error())
+	// var req deleteFolderRequest
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "将文件夹彻底删除时信息不全"+err.Error())
+	// 	return
+	// }
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
-	userId, err := models.GetUserID(req.Account)
+	folderID := jsondata["folder_id"].(float64)
+	uintFolderID := uint(folderID)
+	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	binID := jsondata["bin_id"].(float64)
+	uintBinID := uint(binID)
+	// fmt.Println("Type of jsondata[\"bin_id\"]:", binID, reflect.TypeOf(binID))
+
+	userId, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID: "+err.Error())
 		return
 	}
 	if userId == 0 {
-		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", req.Account))
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", account))
 		return
 	}
 
 	// 检查 bins 中是否有该记录
-	if !services.IsFolderInBin(userId, req.BinId) {
+	if !services.IsFolderInBin(userId, uintBinID) {
 		ReturnError(c, "FAILED", "要删除的 bin record 不在回收站中")
 		return
 	}
 
 	// 检查 folder 文件夹是否存在
-	folderData, err1 := models.GetBinFolderDataByID(req.FolderId)
+	folderData, err1 := models.GetBinFolderDataByID(uintFolderID)
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "要删除的文件夹不存在或已经被删除")
 		return
 	}
 
 	// 检查 folder、 bins 和 user 的记录是否能对应上
-	if !services.CheckFolderBinAndUserRel(userId, req.FolderId, req.BinId) {
+	if !services.CheckFolderBinAndUserRel(userId, uintFolderID, uintBinID) {
 		ReturnError(c, "FAILED", "要删除的回收站记录，文件夹和用户对应不上")
 		return
 	}
 
-	err = services.DeleteFolder(userId, req.BinId, req.FolderId)
+	err = services.DeleteFolder(userId, uintBinID, uintFolderID)
 	if err != nil {
 		ReturnServerError(c, "DeleteFolder: "+err.Error())
 		return
@@ -203,38 +241,55 @@ type recoverFolderRequest struct {
 }
 
 func (b BinController) RecoverBinFolder(c *gin.Context) {
-	var req recoverFolderRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ReturnError(c, "FAILED", "RecoverBinFolder: "+err.Error())
+	// var req recoverFolderRequest
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	ReturnError(c, "FAILED", "RecoverBinFolder: "+err.Error())
+	// 	return
+	// }
+	req, _ := c.Get("jsondata")
+	jsondata, ok := req.(map[string]interface{})
+	if !ok {
+		c.JSON(400, gin.H{
+			"status": "ERROR",
+			"msg":    "服务端获取请求体错误",
+		})
+		c.Abort()
 		return
 	}
 
-	userId, err := models.GetUserID(req.Account)
+	binID := jsondata["bin_id"].(float64)
+	uintBinID := uint(binID)
+	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
+
+	account := jsondata["account"].(string)
+	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
+
+	userId, err := models.GetUserID(account)
 	if err != nil {
 		ReturnServerError(c, "GetUserID: "+err.Error())
 		return
 	}
 	if userId == 0 {
-		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", req.Account))
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", account))
 		return
 	}
 
 	// 先检查文件夹是否在回收站中
-	if !services.IsFolderInBin(userId, req.BinId) {
-		ReturnError(c, "FAILED", fmt.Sprintf("%v 不在回收站中", req.BinId))
+	if !services.IsFolderInBin(userId, uintBinID) {
+		ReturnError(c, "FAILED", fmt.Sprintf("%v 不在回收站中", uintBinID))
 		return
 	}
 
 	// 检查恢复的文件夹会不会与现有文件夹产生冲突
-	if services.CheckBinFolderAndFolder(userId, req.BinId) {
-		ReturnError(c, "FAILED", fmt.Sprintf("恢复文件夹 %v 会导致冲突", req.BinId))
+	if services.CheckBinFolderAndFolder(userId, uintBinID) {
+		ReturnError(c, "FAILED", fmt.Sprintf("恢复文件夹 %v 会导致冲突", uintBinID))
 		return
 	}
 
 	// 恢复文件夹
-	if err := services.RecoverBinFolder(userId, req.BinId); err != nil {
+	if err := services.RecoverBinFolder(userId, uintBinID); err != nil {
 		ReturnServerError(c, "RecoverBinFolder: "+err.Error())
 		return
 	}
-	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("恢复文件夹 %v 成功", req.BinId))
+	ReturnSuccess(c, "SUCCESS", fmt.Sprintf("恢复文件夹 %v 成功", uintBinID))
 }
