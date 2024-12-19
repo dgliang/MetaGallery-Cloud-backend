@@ -120,7 +120,10 @@ func RenameFile(userID, fileID uint, newFileName string) error {
 		return fmt.Errorf("FileName already exists: %s", newFileName)
 	}
 
-	models.RenameFileWithFileID(fileID, newFileName)
+	if err := models.RenameFileWithFileID(fileID, newFileName); err != nil {
+		return err
+	}
+	// models.UpdateFileType(fileID, newFileName)
 	return nil
 }
 

@@ -32,6 +32,7 @@ func GetPreview(c *gin.Context, fileID uint) error {
 	for _, filetype := range PreviewAvailable {
 		if filetype == fileData.FileType {
 			c.File(fullFilePath)
+			return nil
 		}
 	}
 	// switch fileData.FileType {
@@ -46,7 +47,7 @@ func GetPreview(c *gin.Context, fileID uint) error {
 	// case ".svg":
 	// 	return svgPreview(c, fullFilePath)
 	// }
-	return nil
+	return fmt.Errorf("该格式不支持预览")
 	// return fmt.Errorf("该格式不支持预览")
 }
 

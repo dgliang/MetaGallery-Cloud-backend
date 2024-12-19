@@ -111,8 +111,12 @@ func RenameFileWithFileID(fileID uint, newFileName string) error {
 	}
 	var originFileData FileData
 	DataBase.Model(&FileData{}).Where("id = ?", fileID).First(&originFileData)
-	newType := filepath.Ext(originFileData.FileName)
+	newType := filepath.Ext(newFileName)
 	DataBase.Model(&File).Where("ID = ?", fileID).Updates(FileData{FileName: newFileName, FileType: newType})
+	return nil
+}
+
+func UpdateFileType(fileID uint, newFileName string) error {
 	return nil
 }
 
