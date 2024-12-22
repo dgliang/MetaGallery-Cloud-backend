@@ -56,7 +56,7 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		return
 	}
 
-	defaultUrl := config.HostURL + "/resources/img/cover_img/default.png"
+	defaultUrl := config.HOST_URL + "/resources/img/cover_img/default.png"
 	file, err := c.FormFile("cover_img")
 	var savedUrl string
 
@@ -73,7 +73,7 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 			return
 		}
 
-		savedUrl = config.HostURL + "/resources/img/cover_img/" + fileName
+		savedUrl = config.HOST_URL + "/resources/img/cover_img/" + fileName
 		log.Print(savedUrl)
 	}
 

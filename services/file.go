@@ -381,7 +381,7 @@ func ActuallyDeleteFile(fileID uint) error {
 		return err
 	}
 	//文件系统中删除文件
-	filePath := path.Join(config.FileResPath, fileData.Path)
+	filePath := path.Join(config.FILE_RES_PATH, fileData.Path)
 
 	err2 := os.Remove(filePath)
 	if err2 != nil {
@@ -420,7 +420,7 @@ func DownloadFile(c *gin.Context, userID uint, fileID uint) (multipart.File, err
 	}
 
 	//返回文件
-	filePath := path.Join(config.FileResPath, fileData.Path)
+	filePath := path.Join(config.FILE_RES_PATH, fileData.Path)
 	c.FileAttachment(filePath, fileData.FileName)
 
 	return nil, nil

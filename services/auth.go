@@ -1,18 +1,11 @@
 package services
 
 import (
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
-	"os"
+	"MetaGallery-Cloud-backend/config"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
-
-var secretKey = ""
-
-func init() {
-	godotenv.Load()
-	secretKey = os.Getenv("JWT_SECRET_KEY")
-}
 
 func GenerateToken(payload interface{}) (string, error) {
 	claims := jwt.MapClaims{
@@ -21,7 +14,7 @@ func GenerateToken(payload interface{}) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secretKey))
+	tokenString, err := token.SignedString([]byte(config.JWT_SECRET_KEY))
 
 	// token 加上 Bearer 前缀
 	tokenString = "Bearer " + tokenString

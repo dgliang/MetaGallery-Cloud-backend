@@ -160,7 +160,7 @@ func DeleteFolder(userId uint, binId uint, folderID uint) error {
 
 func deleteOSFolder(folderPath string) error {
 	folderPath = strings.ReplaceAll(folderPath, "\\", "/")
-	folderPath = path.Join(config.FileResPath, folderPath)
+	folderPath = path.Join(config.FILE_RES_PATH, folderPath)
 	err := os.RemoveAll(folderPath)
 	return err
 }

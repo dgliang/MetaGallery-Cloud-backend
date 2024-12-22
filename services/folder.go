@@ -110,7 +110,7 @@ func IsExist(userId, parentId uint, folderName string) (bool, error) {
 }
 
 func checkAndCreateFolder(folderPath string) error {
-	fullPath := path.Join(config.FileResPath, folderPath)
+	fullPath := path.Join(config.FILE_RES_PATH, folderPath)
 
 	// 创建完整路径的所有父目录（如果不存在）
 	fatherPath := path.Dir(fullPath)
@@ -217,8 +217,8 @@ func updateChildFolderPaths(tx *gorm.DB, userId uint, oldPath, newPath string) e
 }
 
 func updateFolderPath(oldPath, newPath string) error {
-	oldFullPath := path.Join(config.FileResPath, oldPath)
-	newFullPath := path.Join(config.FileResPath, newPath)
+	oldFullPath := path.Join(config.FILE_RES_PATH, oldPath)
+	newFullPath := path.Join(config.FILE_RES_PATH, newPath)
 
 	log.Println("服务器旧路径：" + oldFullPath)
 	log.Println("服务器新地址：" + newFullPath)

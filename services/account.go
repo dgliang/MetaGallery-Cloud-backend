@@ -41,7 +41,7 @@ func GetAvatarUrl(account string) (string, error) {
 	}
 
 	firstLetter := strings.ToUpper(string(account[0]))
-	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", config.HostURL, firstLetter)
+	avatarUrl := fmt.Sprintf("%s/resources/img/%s.png", config.HOST_URL, firstLetter)
 	return avatarUrl, nil
 }
 

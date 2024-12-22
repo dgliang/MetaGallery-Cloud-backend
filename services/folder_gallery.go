@@ -167,7 +167,7 @@ func GetSharedFolderInfoFromIPFS(ownerAccount, cid string) (sharedFolderInfoResp
 func DownloadSharedFile(c *gin.Context, fileName, ipfsHash string) error {
 	url := GenerateIPFSUrl(ipfsHash)
 
-	cacheFilePath := path.Join(config.CacheResPath, ipfsHash, fileName)
+	cacheFilePath := path.Join(config.CACHE_RES_PATH, ipfsHash, fileName)
 
 	// 确保目录存在
 	cacheDir := path.Dir(cacheFilePath)

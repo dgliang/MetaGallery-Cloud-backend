@@ -6,12 +6,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var HostURL string
+var HOST_URL string
 
 func init() {
 	err := godotenv.Load()
 	if err != nil {
 		panic("Error loading .env file")
 	}
-	HostURL = os.Getenv("HOST_URL")
+	HOST_URL = os.Getenv("HOST_URL")
 }

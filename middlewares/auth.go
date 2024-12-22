@@ -1,23 +1,15 @@
 package middlewares
 
 import (
+	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/controllers"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 )
-
-var secretKey = ""
-
-func init() {
-	godotenv.Load()
-	secretKey = os.Getenv("JWT_SECRET_KEY")
-}
 
 func TokenAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -41,7 +33,7 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte(secretKey), nil
+			return []byte(config.JWT_SECRET_KEY), nil
 		})
 
 		if err != nil || !token.Valid {

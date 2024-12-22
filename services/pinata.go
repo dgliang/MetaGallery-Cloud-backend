@@ -18,7 +18,7 @@ import (
 func UploadFileToIPFS(filePath string) (string, error) {
 	url := "https://api.pinata.cloud/pinning/pinFileToIPFS"
 
-	abosultePath := path.Join(config.FileResPath, filePath)
+	abosultePath := path.Join(config.FILE_RES_PATH, filePath)
 	log.Printf("Absolute path: %s", abosultePath)
 
 	// 创建一个 buffer 和 multipart writer
@@ -46,7 +46,7 @@ func UploadFileToIPFS(filePath string) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Authorization", "Bearer "+config.PINATA_JWT)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
 	// 发送请求
@@ -99,7 +99,7 @@ func UploadJsonToIPFS(jsonData map[string]interface{}) (string, error) {
 
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(payload))
 
-	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Authorization", "Bearer "+config.PINATA_JWT)
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
@@ -135,7 +135,7 @@ func CreatePinataGroup(groupName string) (string, error) {
 
 	req, _ := http.NewRequest("POST", url, payload)
 
-	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Authorization", "Bearer "+config.PINATA_JWT)
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
@@ -172,7 +172,7 @@ func UnpinFromIPFS(CID string) error {
 
 	req, _ := http.NewRequest("DELETE", url, nil)
 
-	req.Header.Add("Authorization", "Bearer "+config.PinataJWT)
+	req.Header.Add("Authorization", "Bearer "+config.PINATA_JWT)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

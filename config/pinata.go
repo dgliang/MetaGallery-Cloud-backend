@@ -6,16 +6,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var PinataJWT string
-var PinataHostUrl string
-var PinataGatewayKey string
+var PINATA_JWT string
+var PINATA_HOST_URL string
+var PINATA_GATEWAY_KEY string
 
 func init() {
 	err := godotenv.Load()
 	if err != nil {
 		panic("Error loading .env file")
 	}
-	PinataJWT = os.Getenv("PINATA_JWT")
-	PinataHostUrl = os.Getenv("PINATA_HOST_URL")
-	PinataGatewayKey = os.Getenv("PINATA_GATEWAY_KEY")
+	PINATA_JWT = os.Getenv("PINATA_JWT")
+	PINATA_HOST_URL = os.Getenv("PINATA_HOST_URL")
+	PINATA_GATEWAY_KEY = os.Getenv("PINATA_GATEWAY_KEY")
 }

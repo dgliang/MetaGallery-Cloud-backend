@@ -27,7 +27,7 @@ func GetPreview(c *gin.Context, fileID uint) error {
 	}
 
 	filePath := fileData.Path
-	fullFilePath := path.Join(config.FileResPath, filePath)
+	fullFilePath := path.Join(config.FILE_RES_PATH, filePath)
 
 	for _, filetype := range PreviewAvailable {
 		if filetype == fileData.FileType {
@@ -61,7 +61,7 @@ func GetPreviewURL(c *gin.Context, fileID uint) (string, error) {
 	}
 
 	filePath := fileData.Path
-	fullFilePath := path.Join(config.FileResPath, filePath)
+	fullFilePath := path.Join(config.FILE_RES_PATH, filePath)
 
 	switch fileData.FileType {
 	case ".jpg", ".jpeg", ".png", ".gif", ".pdf":
@@ -201,7 +201,7 @@ func svgPreview(c *gin.Context, fullFilePath string) error {
 
 func DerectlyReturnFileURL(fullFilePath string) (string, error) {
 
-	fileURL := path.Join(config.HostURL, fullFilePath)
+	fileURL := path.Join(config.HOST_URL, fullFilePath)
 
 	return fileURL, nil
 }

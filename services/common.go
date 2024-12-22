@@ -17,7 +17,7 @@ func SplitBinTimestamp(str string) (string, string) {
 }
 
 func GenerateIPFSUrl(cid string) string {
-	return config.PinataHostUrl + cid + config.PinataGatewayKey
+	return config.PINATA_HOST_URL + cid + config.PINATA_GATEWAY_KEY
 }
 
 func TrimPathPrefix(path string) string {

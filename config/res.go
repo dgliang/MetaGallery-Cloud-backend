@@ -6,14 +6,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var FileResPath string
-var CacheResPath string
+var FILE_RES_PATH string
+var CACHE_RES_PATH string
 
 func init() {
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
 	}
-	FileResPath = os.Getenv("FILE_DIR_PATH")
-	CacheResPath = os.Getenv("LOCAL_CACHE_PATH")
+	FILE_RES_PATH = os.Getenv("FILE_DIR_PATH")
+	CACHE_RES_PATH = os.Getenv("LOCAL_CACHE_PATH")
 }
