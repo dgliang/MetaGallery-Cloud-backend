@@ -3,6 +3,7 @@ package controllers
 import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
+	"MetaGallery-Cloud-backend/util"
 	"fmt"
 	"log"
 	"strconv"
@@ -51,7 +52,7 @@ func (receiver FolderController) GetRootFolder(c *gin.Context) {
 		ID:         folderData.ID,
 		User:       folderData.BelongTo,
 		FolderName: folderData.FolderName,
-		Path:       TrimPathPrefix(folderData.Path),
+		Path:       util.TrimPathPrefix(folderData.Path),
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
 	}
@@ -89,7 +90,7 @@ func (receiver FolderController) GetFolderInfo(c *gin.Context) {
 		User:       folderData.BelongTo,
 		FolderName: folderData.FolderName,
 		ParentID:   folderData.ParentFolder,
-		Path:       TrimPathPrefix(folderData.Path),
+		Path:       util.TrimPathPrefix(folderData.Path),
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
 	}
@@ -180,7 +181,7 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 		User:       folderData.BelongTo,
 		FolderName: folderData.FolderName,
 		ParentID:   folderData.ParentFolder,
-		Path:       TrimPathPrefix(folderData.Path),
+		Path:       util.TrimPathPrefix(folderData.Path),
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
 	}
@@ -263,7 +264,7 @@ func matchFolderResJson(foldersData []models.FolderData) []FolderJson {
 			User:       folderData.BelongTo,
 			FolderName: folderData.FolderName,
 			ParentID:   folderData.ParentFolder,
-			Path:       TrimPathPrefix(folderData.Path),
+			Path:       util.TrimPathPrefix(folderData.Path),
 			IsFavorite: folderData.Favorite,
 			IsShare:    folderData.Share,
 		})
@@ -336,7 +337,7 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 			User:       folderData.BelongTo,
 			ParentID:   folderData.ParentFolder,
 			FolderName: folderData.FolderName,
-			Path:       TrimPathPrefix(folderData.Path),
+			Path:       util.TrimPathPrefix(folderData.Path),
 			IsFavorite: folderData.Favorite,
 			IsShare:    folderData.Share,
 		}
@@ -366,7 +367,7 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 		ID:         folderData.ID,
 		User:       folderData.BelongTo,
 		FolderName: folderData.FolderName,
-		Path:       TrimPathPrefix(folderData.Path),
+		Path:       util.TrimPathPrefix(folderData.Path),
 		IsFavorite: folderData.Favorite,
 		IsShare:    folderData.Share,
 		ParentID:   folderData.ParentFolder,

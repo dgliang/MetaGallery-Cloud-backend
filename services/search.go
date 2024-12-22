@@ -2,6 +2,7 @@ package services
 
 import (
 	"MetaGallery-Cloud-backend/models"
+	"MetaGallery-Cloud-backend/util"
 	"log"
 	"strings"
 	"time"
@@ -74,7 +75,7 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchR
 
 	// 去除 path 路径的前缀
 	for i := range result {
-		result[i].Path = TrimPathPrefix(result[i].Path)
+		result[i].Path = util.TrimPathPrefix(result[i].Path)
 	}
 
 	return searchResponse{
@@ -127,8 +128,8 @@ func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, erro
 
 	// 去除 path 路径的前缀，去除时间戳
 	for i := range result {
-		fullName, _ := SplitBinTimestamp(result[i].Name)
-		result[i].Path = TrimPathPrefix(result[i].Path)
+		fullName, _ := util.SplitBinTimestamp(result[i].Name)
+		result[i].Path = util.TrimPathPrefix(result[i].Path)
 		result[i].Path = strings.ReplaceAll(result[i].Path, result[i].Name, fullName)
 		result[i].Name = fullName
 	}

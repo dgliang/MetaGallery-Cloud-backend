@@ -3,6 +3,7 @@ package services
 import (
 	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
+	"MetaGallery-Cloud-backend/util"
 	"errors"
 	"fmt"
 	"log"
@@ -25,7 +26,7 @@ func RemoveFolder(userId, folderID uint) error {
 		delTime := time.Now()
 
 		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
-		newFolderName := GenerateBinTimestamp(folder.FolderName, delTime)
+		newFolderName := util.GenerateBinTimestamp(folder.FolderName, delTime)
 
 		// 检查同一文件夹下是否存在同名的子文件夹
 		var count int64
@@ -194,7 +195,7 @@ func ListBinFolders(userId uint) ([]FolderBinInfo, error) {
 		}
 
 		// 将 folderName 和 path 处理，去除时间戳
-		fullFolderName, _ := SplitBinTimestamp(folder.FolderName)
+		fullFolderName, _ := util.SplitBinTimestamp(folder.FolderName)
 		fullFolderPath := strings.ReplaceAll(folder.Path, folder.FolderName, fullFolderName)
 		folderBinInfo = append(folderBinInfo, FolderBinInfo{
 			FolderData: models.FolderData{
@@ -237,7 +238,7 @@ func GetBinFolderInfoByID(userId, binId, folderId uint) (FolderBinInfo, error) {
 	}
 
 	// 将 folderName 和 path 处理，去除时间戳
-	fullFolderName, _ := SplitBinTimestamp(folder.FolderName)
+	fullFolderName, _ := util.SplitBinTimestamp(folder.FolderName)
 	fullFolderPath := strings.ReplaceAll(folder.Path, folder.FolderName, fullFolderName)
 	folderBinInfo := FolderBinInfo{
 		FolderData: models.FolderData{
@@ -316,7 +317,7 @@ func CheckBinFolderAndFolder(userId, binId uint) bool {
 		return false
 	}
 
-	binFolderOriginName, _ := SplitBinTimestamp(binFolderData.FolderName)
+	binFolderOriginName, _ := util.SplitBinTimestamp(binFolderData.FolderName)
 	var folderData models.FolderData
 	if err := models.DataBase.Where("belong_to = ? AND folder_name = ? AND parent_folder = ?", userId,
 		binFolderOriginName, binFolderData.ParentFolder).First(&folderData).Error; err != nil {
@@ -362,7 +363,7 @@ func RecoverBinFolder(userId, binId uint) error {
 		}
 
 		// 重命名文件夹，修改相应的路径。根据时间戳设置重命名
-		newFolderName, _ := SplitBinTimestamp(folder.FolderName)
+		newFolderName, _ := util.SplitBinTimestamp(folder.FolderName)
 
 		// 检查同一文件夹下是否存在同名的子文件夹
 		var count int64

@@ -2,6 +2,7 @@ package services
 
 import (
 	"MetaGallery-Cloud-backend/config"
+	"MetaGallery-Cloud-backend/util"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -205,7 +206,7 @@ type folder struct {
 }
 
 func GetFolderJsonFromIPFS(cid string) (folder, error) {
-	url := GenerateIPFSUrl(cid)
+	url := util.GenerateIPFSUrl(cid)
 
 	response, err := http.Get(url)
 	if err != nil {

@@ -3,6 +3,7 @@ package services
 import (
 	"MetaGallery-Cloud-backend/config"
 	"MetaGallery-Cloud-backend/models"
+	"MetaGallery-Cloud-backend/util"
 	"errors"
 	"io"
 	"net/http"
@@ -165,7 +166,7 @@ func GetSharedFolderInfoFromIPFS(ownerAccount, cid string) (sharedFolderInfoResp
 
 // 从 IPFS 远程通过 url 下载文件，同时采用本地缓存的机制减少重复下载
 func DownloadSharedFile(c *gin.Context, fileName, ipfsHash string) error {
-	url := GenerateIPFSUrl(ipfsHash)
+	url := util.GenerateIPFSUrl(ipfsHash)
 
 	cacheFilePath := path.Join(config.CACHE_RES_PATH, ipfsHash, fileName)
 

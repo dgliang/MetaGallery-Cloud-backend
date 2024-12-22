@@ -3,6 +3,7 @@ package controllers
 import (
 	"MetaGallery-Cloud-backend/models"
 	"MetaGallery-Cloud-backend/services"
+	"MetaGallery-Cloud-backend/util"
 	"fmt"
 	"strconv"
 
@@ -224,7 +225,7 @@ func matchFolderBinResJson(folderData []services.FolderBinInfo) []FolderBinJson 
 				User:       folder.FolderData.BelongTo,
 				FolderName: folder.FolderData.FolderName,
 				ParentID:   folder.FolderData.ParentFolder,
-				Path:       TrimPathPrefix(folder.FolderData.Path),
+				Path:       util.TrimPathPrefix(folder.FolderData.Path),
 				IsFavorite: folder.FolderData.Favorite,
 				IsShare:    folder.FolderData.Share,
 			},

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,10 +38,4 @@ func ReturnUnauthorized(c *gin.Context, msg string) {
 	json := &JsonStruct{Code: http.StatusUnauthorized, Msg: msg}
 
 	c.JSON(http.StatusUnauthorized, json)
-}
-
-func TrimPathPrefix(path string) string {
-	re := regexp.MustCompile(`^/\d+`)
-	res := re.ReplaceAllString(path, "")
-	return res
 }
