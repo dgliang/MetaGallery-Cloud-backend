@@ -13,7 +13,7 @@ _A cloud disk web backend with a file gallery based on IPFS_
 - [Go](https://golang.org/)：项目的主要编程语言
 - [Gin](https://gin-gonic.com/)：轻量级、高性能的 Go Web 框架
 - [GORM](https://gorm.io/)：强大且灵活的 ORM 库，用于处理数据库操作
-- [MySQL]()：数据库选择 MySQL
+- [MySQL](https://www.mysql.com/cn/)：数据库选择 MySQL
 
 ## 功能
 
@@ -32,7 +32,10 @@ _A cloud disk web backend with a file gallery based on IPFS_
 ├── routes         # 路由定义
 ├── middlewares    # 中间件
 ├── services       # 业务逻辑
+├── resources      # 静态资源
+├── util           # 工具函数
 ├── main.go        # 项目入口文件
+├── .env           # 环境变量配置文件
 └── go.mod         # 依赖管理文件
 ```
 
@@ -61,12 +64,21 @@ _A cloud disk web backend with a file gallery based on IPFS_
    在项目根目录下创建 `.env` 文件，并添加以下内容：
 
    ```env
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_USER=root
-   DB_PASSWORD= <yourpassword>
-   DB_NAME= <yourdbname>
-   JWT_SECRET= <your_jwt_secret>
+   DB_HOST=<your-database-host>
+   DB_PORT=<your-database-port>
+   DB_USER=<your-database-user>
+   DB_PASSWORD=<your-database-password>
+   DB_NAME=<your-database-name>
+
+   HOST_URL=<backend-server-url>
+   JWT_SECRET=<your_jwt_secret>
+
+   FILE_DIR_PATH="./resources/files/"
+   LOCAL_CACHE_PATH="./resources/.cache"
+
+   PINATA_JWT=
+   PINATA_HOST_URL=
+   PINATA_GATEWAY_KEY=
    ```
 
 4. 启动项目
