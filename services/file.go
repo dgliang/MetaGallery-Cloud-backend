@@ -30,7 +30,7 @@ func FileType(fileName string) string {
 	return ext
 }
 
-func SaveFile(userID, uintPID uint, fileName string, file multipart.File) error {
+func SaveFileByName(userID, uintPID uint, fileName string, file multipart.File) error {
 
 	//生成路径
 	path, err := models.GenerateFilePath(userID, uintPID, fileName)
@@ -42,7 +42,7 @@ func SaveFile(userID, uintPID uint, fileName string, file multipart.File) error 
 
 	//在本地创建文件
 	out, err := os.Create("resources/files" + path)
-	log.Printf("resources/files" + path)
+	log.Println("resources/files" + path)
 	if err != nil {
 
 		fmt.Println("文件创建失败:", err)
@@ -60,7 +60,7 @@ func SaveFile(userID, uintPID uint, fileName string, file multipart.File) error 
 	return nil
 }
 
-func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
+func SaveFileByID(userID, uintPID uint, fileID uint, file multipart.File) error {
 
 	//生成路径
 	path, err := models.GenerateFilePath(userID, uintPID, strconv.FormatUint(uint64(fileID), 10))
@@ -72,7 +72,7 @@ func SaveFile2(userID, uintPID uint, fileID uint, file multipart.File) error {
 
 	//在本地创建文件
 	out, err := os.Create("resources/files" + path)
-	log.Printf("resources/files" + path)
+	log.Println("resources/files" + path)
 	if err != nil {
 
 		fmt.Println("文件创建失败:", err)
@@ -349,7 +349,7 @@ func GetBinFiles(userID uint) ([]models.FileBrief, error) {
 	var fileBriefs []models.FileBrief
 	for _, binItemID := range binItemIDs {
 
-		fileID := models.GetFileIDInBIN(binItemID)
+		fileID := models.GetFileIDInBin(binItemID)
 
 		fileData, err := models.GetDeletedFileData(fileID)
 		if err != nil {
@@ -450,7 +450,7 @@ func SearchBinFile(userID uint, pattern string) ([]models.FileBrief, error) {
 
 	var fileBriefs []models.FileBrief
 	for _, binItemID := range binItemIDs {
-		fileID := models.GetFileIDInBIN(binItemID)
+		fileID := models.GetFileIDInBin(binItemID)
 
 		fileData, err := models.GetDeletedFileData(fileID)
 		if err != nil {

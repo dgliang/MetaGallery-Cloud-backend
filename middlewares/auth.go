@@ -55,7 +55,7 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func TokenAuth2Middleware() gin.HandlerFunc {
+func AccountValidateMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		jwtPayload, _ := c.Get("jwt_payload")
 		payloadMap, ok := jwtPayload.(map[string]interface{})

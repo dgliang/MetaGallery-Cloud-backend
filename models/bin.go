@@ -38,7 +38,7 @@ func InsertBinItem(binItem Bin) (Bin, error) {
 }
 
 func DeleteBinItem(binItemID uint) error {
-	log.Printf("DeleteBinItem " + strconv.FormatUint(uint64(binItemID), 10))
+	log.Println("DeleteBinItem " + strconv.FormatUint(uint64(binItemID), 10))
 	if err := DataBase.Model(&Bin{}).Where("id = ?", binItemID).Delete(&Bin{ID: binItemID}).Error; err != nil {
 		return err
 	}

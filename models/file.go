@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -74,7 +73,7 @@ func GenerateFilePath(userID, parentFolderID uint, fileName string) (string, err
 	return filePath, nil
 }
 
-func CreateFileData2(userID uint, fileName string, parentFolderID uint, fileType string) (FileData, error) {
+func CreateFileData(userID uint, fileName string, parentFolderID uint, fileType string) (FileData, error) {
 	filePath, err := GenerateFilePath(userID, parentFolderID, fileName)
 	if err != nil {
 		return FileData{}, err
@@ -240,7 +239,7 @@ func SearchFile(userID uint, pattern string) ([]FileData, error) {
 	var fileDatas []FileData
 	err := DataBase.Model(&FileData{}).Where("belong_to = ? and file_name LIKE ?", userID, "%"+pattern+"%").Find(&fileDatas)
 	if err != nil {
-		return nil, fmt.Errorf(err.Error.Error())
+		return nil, err.Error
 	}
 	return fileDatas, nil
 }
@@ -249,7 +248,7 @@ func SearchFavorFile(userID uint, pattern string) ([]FileData, error) {
 	var fileDatas []FileData
 	err := DataBase.Model(&FileData{}).Where("belong_to = ? and favorite = 1 and file_name LIKE ?", userID, "%"+pattern+"%").Find(&fileDatas)
 	if err != nil {
-		return nil, fmt.Errorf(err.Error.Error())
+		return nil, err.Error
 	}
 	return fileDatas, nil
 }

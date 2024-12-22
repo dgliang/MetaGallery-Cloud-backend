@@ -49,7 +49,7 @@ func FileBinItemExist(fileID uint) bool {
 	return false
 }
 
-func GetFileIDInBIN(binItemID uint) uint {
+func GetFileIDInBin(binItemID uint) uint {
 	var Item FileBin
 	if err := DataBase.Model(&FileBin{}).Where("bin_id = ?", binItemID).Find(&Item).Error; err != nil {
 		return 0

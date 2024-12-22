@@ -98,14 +98,14 @@ func (receiver FileController) UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	newfile, err := models.CreateFileData2(userID, fileName, uintPID, filepath.Ext(fileName))
+	newfile, err := models.CreateFileData(userID, fileName, uintPID, filepath.Ext(fileName))
 	if err != nil {
 		ReturnServerError(c, err.Error())
 		return
 	}
 
 	//在本地创建文件
-	saveFileError := services.SaveFile2(userID, uintPID, newfile.ID, file)
+	saveFileError := services.SaveFileByID(userID, uintPID, newfile.ID, file)
 	if saveFileError != nil {
 		ReturnServerError(c, saveFileError.Error())
 		models.UnscopedDeleteFileData(newfile.ID)

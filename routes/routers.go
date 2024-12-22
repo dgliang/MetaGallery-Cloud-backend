@@ -17,7 +17,7 @@ func Router(r *gin.Engine) {
 
 		// 除了注册登录外，其余接口都要进行 jwt 验证
 		api.Use(middlewares.TokenAuthMiddleware())
-		api.Use(middlewares.TokenAuth2Middleware())
+		api.Use(middlewares.AccountValidateMiddleware())
 
 		// 账号管理
 		api.GET("/getUserInfo", controllers.UerController{}.GetUserInfo)
