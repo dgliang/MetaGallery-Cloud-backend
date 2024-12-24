@@ -255,3 +255,17 @@ func GetAllFavorFolders(userID uint) ([]models.FolderData, error) {
 	}
 	return favorFolders, nil
 }
+
+func IsFolderBelongto(userID, folderID uint) bool {
+
+	folderData, err := models.UnscopedGetFolderData(folderID)
+	if err != nil {
+		return false
+	}
+
+	if folderData.BelongTo != userID {
+		return false
+	}
+
+	return true
+}

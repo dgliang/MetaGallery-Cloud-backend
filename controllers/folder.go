@@ -79,6 +79,17 @@ func (receiver FolderController) GetFolderInfo(c *gin.Context) {
 	}
 
 	folderIdUint64, _ := strconv.ParseUint(folderId, 10, 64)
+
+	Belongto := services.IsFolderBelongto(userID, uint(folderIdUint64))
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	folderData, err1 := models.GetFolderDataByID(uint(folderIdUint64))
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")
@@ -137,6 +148,16 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	}
 	if userID == 0 {
 		ReturnError(c, "Failed", "用户不存在")
+		return
+	}
+
+	Belongto := services.IsFolderBelongto(userID, uintPID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
 		return
 	}
 
@@ -214,6 +235,16 @@ func (receiver FolderController) GetChildFolders(c *gin.Context) {
 	}
 	if userID == 0 {
 		ReturnError(c, "FAILED", "用户不存在")
+		return
+	}
+
+	Belongto := services.IsFolderBelongto(userID, uint(folderID))
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
 		return
 	}
 
@@ -315,6 +346,16 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 	}
 	if userID == 0 {
 		ReturnError(c, "FAILED", "提供的用户不存在")
+		return
+	}
+
+	Belongto := services.IsFolderBelongto(userID, uintFolderID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
 		return
 	}
 
@@ -427,6 +468,16 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 	}
 	if userID == 0 {
 		ReturnError(c, "FAILED", "提供的用户不存在")
+		return
+	}
+
+	Belongto := services.IsFolderBelongto(userID, uintFolderID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
 		return
 	}
 

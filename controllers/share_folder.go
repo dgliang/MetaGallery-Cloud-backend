@@ -37,6 +37,16 @@ func (s FolderShareController) SetFolderShared(c *gin.Context) {
 		return
 	}
 
+	Belongto := services.IsFolderBelongto(userId, uint(folderId))
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	folderData, err := models.GetFolderDataByID(uint(folderId))
 	if err != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "文件夹不存在")

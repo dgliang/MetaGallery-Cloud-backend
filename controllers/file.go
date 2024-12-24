@@ -181,26 +181,9 @@ func (receiver FileController) DownloadFile(c *gin.Context) {
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.DefaultPostForm("account", "")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	fileID := c.DefaultPostForm("file_id", "-1")
 	newFileName := c.DefaultPostForm("new_file_name", "")
 
@@ -257,26 +240,9 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 // }
 
 func (receiver FileController) GetSubFiles(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	folderID := c.Query("folder_id")
 	if folderID == "" {
 		log.Printf("from %s 查询子文件提供的文件夹id不全\n", c.Request.Host)
@@ -322,27 +288,9 @@ func (receiver FileController) GetSubFiles(c *gin.Context) {
 // }
 
 func (receiver FileController) GetFileData(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
-	// fmt.Println(payloadMap["account"])
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	fileID := c.Query("file_id")
 
 	if account == "" {

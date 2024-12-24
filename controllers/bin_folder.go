@@ -49,6 +49,16 @@ func (b BinController) RemoveFolder(c *gin.Context) {
 		return
 	}
 
+	Belongto := services.IsFolderBelongto(userId, uintFolderID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
+
 	folderData, err1 := models.GetFolderDataByID(uintFolderID)
 	if err1 != nil || folderData.ID == 0 {
 		ReturnError(c, "FAILED", "要删除的文件夹不存在")
@@ -109,6 +119,16 @@ func (b BinController) DeleteFolder(c *gin.Context) {
 	}
 	if userId == 0 {
 		ReturnError(c, "FAILED", fmt.Sprintf("%v 不存在", account))
+		return
+	}
+
+	Belongto := services.IsFolderBelongto(userId, uintFolderID)
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
 		return
 	}
 
@@ -190,6 +210,16 @@ func (b BinController) GetBinFolderInfo(c *gin.Context) {
 
 	binId, _ := strconv.Atoi(binIdStr)
 	folderId, _ := strconv.Atoi(folderIdStr)
+
+	Belongto := services.IsFolderBelongto(userId, uint(folderId))
+	if !Belongto {
+		c.JSON(403, gin.H{
+			"error":   "FORBIDDEN",
+			"message": "访问禁止",
+		})
+		c.Abort()
+		return
+	}
 
 	if !services.IsFolderInBin(userId, uint(binId)) {
 		ReturnError(c, "FAILED", "要查看的回收站记录不存在")

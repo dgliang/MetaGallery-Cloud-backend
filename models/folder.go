@@ -123,3 +123,11 @@ func GetAllFavorFolders(userID uint) ([]FolderData, error) {
 	}
 	return favorFolders, nil
 }
+
+func UnscopedGetFolderData(folderID uint) (FolderData, error) {
+	var folderData FolderData
+	// 预加载
+	DataBase.Preload("ParentFolder").Model(&FolderData{ID: folderID}).Unscoped().Where("id = ?", folderID).Find(&folderData)
+
+	return folderData, nil
+}
