@@ -68,7 +68,7 @@ func SearchFilesAndFolders(userId uint, rootFolderPath, keyword string) (searchR
 			share AS is_shared
 		FROM folder_data 
 		WHERE folder_name LIKE ? AND belong_to = ? AND path LIKE ?)
-	`, keyword+"%", userId, rootFolderPath+"/%", keyword+"%", userId, rootFolderPath+"/%").Scan(&result).Error
+	`, "%"+keyword+"%", userId, rootFolderPath+"/%", "%"+keyword+"%", userId, rootFolderPath+"/%").Scan(&result).Error
 	if err != nil {
 		return searchResponse{}, err
 	}
@@ -120,7 +120,7 @@ func SearchBinFilesAndFolders(userId uint, keyword string) (searchResponse, erro
 		JOIN folder_data fd ON fb.folder_id = fd.id
 		WHERE fd.folder_name LIKE ? AND b.user_id = ? AND fd.deleted_at IS NOT NULL
 	)
-	`, keyword+"%", userId, keyword+"%", userId).Scan(&result).Error
+	`, "%"+keyword+"%", userId, "%"+keyword+"%", userId).Scan(&result).Error
 	log.Print(result)
 	if err != nil {
 		return searchResponse{}, err
