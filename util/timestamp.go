@@ -13,6 +13,10 @@ func GenerateBinTimestamp(str string, t time.Time) string {
 
 // SplitBinTimestamp 从移入回收站的文件夹中提取时间戳
 func SplitBinTimestamp(str string) (string, string) {
-	re := regexp.MustCompile(`^(.*)_bin_\d{8}_\d{6}$`)
-	return re.FindStringSubmatch(str)[1], re.FindStringSubmatch(str)[0]
+	re := regexp.MustCompile(`^(.*)(_bin_\d{8}_\d{6})$`)
+	matches := re.FindStringSubmatch(str)
+	if len(matches) == 3 {
+		return matches[1], matches[2]
+	}
+	return str, ""
 }
