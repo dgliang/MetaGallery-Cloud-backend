@@ -1,6 +1,8 @@
 package main
 
 import (
+	config "MetaGallery-Cloud-backend/config/keys"
+	"MetaGallery-Cloud-backend/middlewares"
 	"MetaGallery-Cloud-backend/routes"
 
 	"github.com/gin-contrib/cors"
@@ -15,6 +17,7 @@ func main() {
 		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},            // 允许的 HTTP 方法
 		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"}, // 允许的请求头
 	}))
+	r.Use(middlewares.TlsHandler())
 
 	routes.Router(r)
 	// 提供静态文件服务
@@ -24,6 +27,6 @@ func main() {
 	r.Static("/public", "./public")
 	r.StaticFile("/favicon.ico", "./public/favicon.ico")
 
-	r.Run(":8080")
+	r.RunTLS(":8443", config.SSL_CRT_PATH, config.SSL_KEY_PATH)
 
 }

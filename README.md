@@ -64,21 +64,32 @@ _A cloud disk web backend with a file gallery based on IPFS_
    在项目根目录下创建 `.env` 文件，并添加以下内容：
 
    ```env
+   # 数据库配置
    DB_HOST=<your-database-host>
    DB_PORT=<your-database-port>
    DB_USER=<your-database-user>
    DB_PASSWORD=<your-database-password>
    DB_NAME=<your-database-name>
 
+   # 后端服务器配置
    HOST_URL=<backend-server-url>
+
+   # JWT 配置
    JWT_SECRET=<your_jwt_secret>
 
+   # 文件和缓存文件存储配置
    FILE_DIR_PATH="./resources/files/"
    LOCAL_CACHE_PATH="./resources/.cache"
 
+   # Pinata 和 IPFS 配置
    PINATA_JWT=
    PINATA_HOST_URL=
    PINATA_GATEWAY_KEY=
+
+   # SSL 证书路径
+   SSL_CRT_PATH="./config/keys/xxx.crt"
+   SSL_KEY_PATH="./config/keys/xxx.key"
+
    ```
 
 4. 启动项目
