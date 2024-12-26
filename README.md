@@ -2,11 +2,11 @@
 
 _A cloud disk web backend with a file gallery based on IPFS_
 
-基于 Gin + GORM 和 IPFS 的 Go 文件库云盘网页后端
+基于 `Gin` + `GORM` 和 `IPFS` 的 `Go` 语言文件库云盘网页后端
 
 ## 简介
 
-该项目是一个使用 Go 语言开发的后端应用，采用了 Gin Web 框架来处理 HTTP 请求，并通过 GORM 与数据库进行交互。该项目的目的是构建一个快速、简单的 RESTful API 后端服务。
+该项目是一个使用 Go 语言开发的后端应用，采用了 Gin Web 框架来处理 HTTPS 请求，并通过 GORM 与数据库进行交互。项目的目的是构建一个快速、安全、简单的 RESTful API 后端服务，以支持安全的数据传输和高效的服务响应。
 
 ## 主要技术栈
 
@@ -53,13 +53,16 @@ _A cloud disk web backend with a file gallery based on IPFS_
    cd MetaGallery-Cloud-backend
    ```
 
-2. 安装依赖
+2. 配置 SSL 证书
+   将下载的 SSL 证书文件（xxx.crt 和 xxx.key）放入 `./config/keys/` 目录下
+
+3. 安装依赖
 
    ```bash
    go mod tidy
    ```
 
-3. 配置 `.env` 文件
+4. 配置 `.env` 文件
 
    在项目根目录下创建 `.env` 文件，并添加以下内容：
 
@@ -100,7 +103,7 @@ _A cloud disk web backend with a file gallery based on IPFS_
    go run main.go
    ```
 
-   项目将运行在 `http://localhost:8443`
+   项目将运行在 `https://<backend-server-url>:8443`，默认本地运行在 `https://localhost:8443`
 
 ## API 文档
 
