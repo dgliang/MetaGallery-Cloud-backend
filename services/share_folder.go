@@ -109,7 +109,19 @@ func setShareFolderState(userId, folderId uint, shareState bool) error {
 			}
 		}
 
-		// TODO: 更新所有子文件的 Share 字段
+		// 更新所有子文件的 Share 字段
+		var subFiles []models.FileData
+		if err := tx.Where("path LIKE ? AND belong_to = ?", parentPath+"/%", userId).
+			Find(&subFiles).Error; err != nil {
+			return err
+		}
+
+		for _, subFile := range subFiles {
+			subFile.Share = shareState
+			if err := tx.Save(&subFile).Error; err != nil {
+				return err
+			}
+		}
 
 		return nil
 	})

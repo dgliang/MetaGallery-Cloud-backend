@@ -27,26 +27,7 @@ type FileBriefJson struct {
 }
 
 func (receiver FileController) UploadFile(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
 	account := c.DefaultPostForm("account", "")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
 	parentFolderID := c.DefaultPostForm("parent_id", "-1")
 	fileName := c.DefaultPostForm("file_name", "")
 
@@ -181,12 +162,12 @@ func (receiver FileController) DownloadFile(c *gin.Context) {
 }
 
 func (receiver FileController) RenameFile(c *gin.Context) {
-
+	// 从http请求中获取参数
 	account := c.DefaultPostForm("account", "")
-
 	fileID := c.DefaultPostForm("file_id", "-1")
 	newFileName := c.DefaultPostForm("new_file_name", "")
 
+	// 验证参数合法性
 	if account == "" {
 		log.Printf("from %s 上传文件提供的信息不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "上传者账号不能为空")
@@ -201,21 +182,21 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 		ReturnError(c, "Failed", "用户不存在")
 		return
 	}
-
 	if newFileName == "" {
 		log.Printf("from %s 上传文件提供的信息不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "新文件名不能为空")
 		return
 	}
 
-	FID, err := strconv.ParseUint(fileID, 10, 0) // 10是进制，0是自动推断结果位数
+	// 将参数类型转换便于后续函数操作
+	FID, err := strconv.ParseUint(fileID, 10, 0)
 	if err != nil {
 		fmt.Println("转换出错:", err)
 		return
 	}
-	// 将 uint64 转为 uint
 	uintFID := uint(FID)
 
+	// 操作合法性检查
 	Belongto := services.IsFileBelongto(userID, uintFID)
 	if !Belongto {
 		c.JSON(403, gin.H{
@@ -226,11 +207,13 @@ func (receiver FileController) RenameFile(c *gin.Context) {
 		return
 	}
 
+	// 进行操作
 	if err := services.RenameFile(userID, uintFID, newFileName); err != nil {
 		ReturnError(c, "FAILED", "重命名失败:"+err.Error())
 		return
 	}
 
+	// 返回成功信息
 	ReturnSuccess(c, "SUCCESS", "重命名文件成功", nil)
 }
 

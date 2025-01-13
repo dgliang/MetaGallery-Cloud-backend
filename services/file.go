@@ -123,7 +123,6 @@ func RenameFile(userID, fileID uint, newFileName string) error {
 	if err := models.RenameFileWithFileID(fileID, newFileName); err != nil {
 		return err
 	}
-	// models.UpdateFileType(fileID, newFileName)
 	return nil
 }
 
