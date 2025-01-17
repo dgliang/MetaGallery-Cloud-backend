@@ -115,14 +115,9 @@ type createFolderRequest struct {
 }
 
 func (receiver FolderController) CreateFolder(c *gin.Context) {
-	// var req createFolderRequest
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "提供的信息不全。解析 JSON Request："+err.Error())
-	// 	return
-	// }
 
 	req, _ := c.Get("jsondata")
-	// fmt.Println(req)
+
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {
 		c.JSON(400, gin.H{
@@ -137,7 +132,6 @@ func (receiver FolderController) CreateFolder(c *gin.Context) {
 	uintPID := uint(parentID)
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	folderName := jsondata["folder_name"].(string)
 
@@ -310,15 +304,9 @@ type renameFolderRequest struct {
 }
 
 func (receiver FolderController) RenameFolder(c *gin.Context) {
-	// var req renameFolderRequest
-
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "提供的 JSON 数据出错"+err.Error())
-	// 	return
-	// }
 
 	req, _ := c.Get("jsondata")
-	// fmt.Println(req)
+
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {
 		c.JSON(400, gin.H{
@@ -331,13 +319,10 @@ func (receiver FolderController) RenameFolder(c *gin.Context) {
 
 	folderID := jsondata["folder_id"].(float64)
 	uintFolderID := uint(folderID)
-	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	newName := jsondata["new_folder_name"].(string)
-	// fmt.Println("Type of jsondata[\"new_folder_name\"]:", newName, reflect.TypeOf(newName))
 
 	userID, err := models.GetUserID(account)
 	if err != nil {
@@ -423,12 +408,7 @@ type favoriteFolderRequest struct {
 }
 
 func (receiver FolderController) FavoriteFolder(c *gin.Context) {
-	// var req favoriteFolderRequest
 
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "提供的信息不全"+err.Error())
-	// 	return
-	// }
 	req, _ := c.Get("jsondata")
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {
@@ -442,13 +422,10 @@ func (receiver FolderController) FavoriteFolder(c *gin.Context) {
 
 	folderID := jsondata["folder_id"].(float64)
 	uintFolderID := uint(folderID)
-	// fmt.Println("Type of jsondata[\"folder_id\"]:", folderID, reflect.TypeOf(folderID))
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	isFavorite := jsondata["is_favorite"].(float64)
-	// fmt.Println("Type of jsondata[\"new_folder_name\"]:", newName, reflect.TypeOf(newName))
 
 	// 验证 IsFavorite 的取值是否为 1 或者 2
 	var favoriteStatus bool

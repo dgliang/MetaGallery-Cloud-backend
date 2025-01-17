@@ -16,11 +16,7 @@ type removeFolderRequest struct {
 }
 
 func (b BinController) RemoveFolder(c *gin.Context) {
-	// var req removeFolderRequest
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "将文件夹移至回收站时信息不全"+err.Error())
-	// 	return
-	// }
+
 	req, _ := c.Get("jsondata")
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {
@@ -85,11 +81,7 @@ type deleteFolderRequest struct {
 }
 
 func (b BinController) DeleteFolder(c *gin.Context) {
-	// var req deleteFolderRequest
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "将文件夹彻底删除时信息不全"+err.Error())
-	// 	return
-	// }
+
 	req, _ := c.Get("jsondata")
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {
@@ -272,11 +264,7 @@ type recoverFolderRequest struct {
 }
 
 func (b BinController) RecoverBinFolder(c *gin.Context) {
-	// var req recoverFolderRequest
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	ReturnError(c, "FAILED", "RecoverBinFolder: "+err.Error())
-	// 	return
-	// }
+
 	req, _ := c.Get("jsondata")
 	jsondata, ok := req.(map[string]interface{})
 	if !ok {

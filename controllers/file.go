@@ -23,7 +23,6 @@ type FileBriefJson struct {
 	IsShare    bool   `json:"is_share"`
 	IPFSHash   string `json:"ipfs_hash"`
 	Deleted    string `json:"is_deleted"`
-	// DeleteTime Time.time `json:"delete_time"`
 }
 
 func (receiver FileController) UploadFile(c *gin.Context) {
@@ -337,14 +336,11 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 	}
 
 	isFavorite := jsondata["is_favorite"].(float64)
-	// fmt.Println("Type of jsondata[\"isFavorite\"]:", isFavorite, reflect.TypeOf(isFavorite))
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	fileID := jsondata["file_id"].(float64)
 	uintFID := uint(fileID)
-	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
 
 	var favoriteStatus bool
 	if isFavorite == 1 {
@@ -399,26 +395,9 @@ func (receiver FileController) FavoriteFile(c *gin.Context) {
 }
 
 func (receiver FileController) GetFavorFiles(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	if account == "" {
 		log.Printf("from %s 查询收藏文件提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
@@ -461,11 +440,9 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 	}
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	fileID := jsondata["file_id"].(float64)
 	uintFID := uint(fileID)
-	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
 
 	if account == "" {
 		log.Printf("from %s 将文件移入回收站提供的账号不全\n", c.Request.Host)
@@ -507,26 +484,9 @@ func (receiver FileController) RemoveFile(c *gin.Context) {
 }
 
 func (receiver FileController) GetBinFiles(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	if account == "" {
 		log.Printf("from %s 查询已回收文件提供的账号不全\n", c.Request.Host)
 		ReturnError(c, "FAILED", "账号不能为空")
@@ -565,11 +525,9 @@ func (receiver FileController) RecoverFile(c *gin.Context) {
 	}
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	fileID := jsondata["file_id"].(float64)
 	uintFID := uint(fileID)
-	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
 
 	if account == "" {
 		log.Printf("from %s 将文件移出回收站提供的账号不全\n", c.Request.Host)
@@ -621,11 +579,9 @@ func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 	}
 
 	account := jsondata["account"].(string)
-	// fmt.Println("Type of jsondata[\"account\"]:", account, reflect.TypeOf(account))
 
 	fileID := jsondata["file_id"].(float64)
 	uintFID := uint(fileID)
-	// fmt.Println("Type of jsondata[\"file_id\"]:", fileID, reflect.TypeOf(fileID))
 
 	if account == "" {
 		log.Printf("from %s 将文件彻底删除提供的账号不全\n", c.Request.Host)
@@ -667,26 +623,9 @@ func (receiver FileController) ActuallyDeleteFile(c *gin.Context) {
 }
 
 func (receiver FileController) PreviewFile(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	fileID := c.Query("file_id")
 
 	if account == "" {
@@ -724,36 +663,12 @@ func (receiver FileController) PreviewFile(c *gin.Context) {
 		return
 	}
 
-	// fileURL, err2 := services.GetPreviewURL(c, uintFID)
-	// if err2 != nil {
-	// 	log.Printf("获取预览失败 ：%s", err2)
-	// 	ReturnError(c, "FAILED", err2.Error())
-	// 	return
-	// }
-	// ReturnSuccess(c, "SUCCESS", fileURL)
 }
 
 func (receiver FileController) GetBinFileData(c *gin.Context) {
-	// jwtPayload, _ := c.Get("jwt_payload")
-	// payloadMap, ok := jwtPayload.(map[string]interface{})
-	// if !ok {
-	// 	fmt.Println("jwtPayload 不是一个 map[string]interface{} 类型")
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	account := c.Query("account")
-	// if account != payloadMap["account"] {
-	// 	c.JSON(403, gin.H{
-	// 		"error":   "FORBIDDEN",
-	// 		"message": "访问禁止",
-	// 	})
-	// 	c.Abort()
-	// 	return
-	// }
+
 	fileID := c.Query("file_id")
 
 	if account == "" {

@@ -242,28 +242,7 @@ func removeSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
 	return nil
 }
 
-// 将被移出回收站内的文件夹的子文件软删除标记去除
-// func recoverSubFiles(tx *gorm.DB, userId uint, parentPath string) error {
-// 	parentPath = strings.ReplaceAll(strings.TrimSpace(parentPath), "\\", "/")
-//
-// 	var subFiles []models.FileData
-// 	if err := tx.Model(models.FileData{}).Where("path LIKE ? AND belong_to = ?", parentPath+"%", userId).
-// 		Find(&subFiles).Error; err != nil {
-// 		return fmt.Errorf("RecoverSubFiles Error: %w", err)
-// 	}
-//
-// 	log.Println("路径：" + parentPath)
-// 	log.Println("影响文件:" + strconv.Itoa(len(subFiles)))
-//
-// 	// 遍历子文件进行恢复
-// 	for _, file := range subFiles {
-// 		if err := models.RecoverFile(file.ID); err != nil {
-// 			return fmt.Errorf("RecoverSubFiles error: %w", err)
-// 		}
-// 	}
-//
-// 	return nil
-// }
+
 
 // 将文件移入回收站
 func RemoveFile(fileID uint) error {
@@ -315,9 +294,7 @@ func RecoverFile(userID uint, fileID uint) error {
 	for {
 		if FileExist(userID, fileData.ParentFolderID, fileName) {
 			return fmt.Errorf("RecoverFile error: 原文件夹下已有重名文件")
-			// models.UnscopedRenameFile2(fileID, fileData.FileName+" ("+strconv.Itoa(count)+")")
-			// fileName = fileData.FileName + " (" + strconv.Itoa(count) + ")"
-			// count += 1
+			
 		} else {
 			break
 		}
